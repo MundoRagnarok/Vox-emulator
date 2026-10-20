@@ -793,10 +793,9 @@ $btnDeletarGm.Add_Click({
             }
 
             # Verificar se existe banco ro3emu.db para oferecer reset de cadastro
-            $dbCandidates = @(
-                Join-Path $scriptDir "data\ro3emu.db",
-                Join-Path $scriptDir "server\data\ro3emu.db"
-            )
+            $dbPath1 = Join-Path $scriptDir "data\ro3emu.db"
+            $dbPath2 = Join-Path $scriptDir "server\data\ro3emu.db"
+            $dbCandidates = @($dbPath1, $dbPath2)
             $dbFound = $null
             foreach ($db in $dbCandidates) {
                 if (Test-Path $db) {
