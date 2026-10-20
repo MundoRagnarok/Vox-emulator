@@ -1,26 +1,31 @@
-name: Feature or behavior request
-description: Propose a focused improvement or ask about an unimplemented behavior
-title: "[Feature] "
+name: Sugestão de Funcionalidade ou Paridade
+description: Proponha uma melhoria de mecânica, paridade com o servidor oficial ou novo recurso
+title: "[Sugestão/Paridade]: "
 labels: [enhancement]
 body:
-  - type: textarea
-    id: problem
+  - type: markdown
     attributes:
-      label: Problem or use case
-      description: What should a player, operator, or contributor be able to do?
+      value: |
+        Ajude a planejar os próximos passos do emulador brasileiro!
+        Lembre-se de que nosso objetivo é a estabilidade inicial e posterior paridade 1:1 com o servidor oficial do RO3.
+  - type: textarea
+    id: problema_ou_caso_de_uso
+    attributes:
+      label: Caso de uso ou problema a ser resolvido
+      description: O que um jogador, operador de servidor ou desenvolvedor deveria conseguir fazer?
     validations:
       required: true
   - type: textarea
-    id: behavior
+    id: comportamento_proposto
     attributes:
-      label: Proposed behavior
-      description: Describe the smallest useful result and any known constraints.
+      label: Comportamento proposto
+      description: Descreva detalhadamente como o recurso deve funcionar no jogo.
     validations:
       required: true
   - type: textarea
-    id: evidence
+    id: evidencias
     attributes:
-      label: Client evidence or related documentation
-      description: Include paths, symbols, message IDs, or links when available. Say when original-server behavior is unknown; do not upload client files or exported data.
+      label: Evidências do cliente ou documentação oficial
+      description: Inclua caminhos de arquivos Lua, tabelas de configuração, IDs de mensagens ou vídeos/prints do jogo oficial quando disponíveis.
     validations:
       required: false

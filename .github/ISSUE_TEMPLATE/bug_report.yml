@@ -1,64 +1,67 @@
-name: Bug report
-description: Report a reproducible server, tool, or documentation problem
-title: "[Bug] "
+name: Relato de Bug
+description: Relate um problema reproduzível no emulador, servidor ou inicializador
+title: "[Bug]: "
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Please include enough detail to reproduce the issue. Remove account details, keys, private IPs, client files, and exported game data from logs or attachments.
+        Obrigado por ajudar a comunidade a identificar problemas!
+        Por favor, forneça o máximo de detalhes possível para que possamos reproduzir o erro.
+        **Atenção:** Remova senhas, chaves privadas, IPs públicos ou arquivos proprietários de logs ou anexos.
   - type: input
-    id: version
+    id: versao
     attributes:
-      label: Version or commit
-      description: Commit SHA, release, or the date you cloned the repository.
-      placeholder: e.g. main at abc1234
+      label: Versão ou Commit
+      description: Hash do commit, versão da release ou data em que clonou o repositório.
+      placeholder: ex: main em abc1234 ou Release v1.0.0
     validations:
       required: true
   - type: input
-    id: platform
+    id: plataforma
     attributes:
-      label: Platform and .NET version
-      placeholder: e.g. Windows 11 x64, dotnet --version 10.0.x
+      label: Sistema Operacional e versão do .NET
+      placeholder: ex: Windows 11 x64, .NET 10.0.100
     validations:
       required: true
   - type: textarea
-    id: setup
+    id: ambiente
     attributes:
-      label: Setup and commands
-      description: What were you running, and which commands or settings matter?
-      placeholder: Local server with exported data; command and relevant configuration.
+      label: Configuração e comandos utilizados
+      description: O que você estava executando (servidor local solo, servidor host para amigos, etc.)?
+      placeholder: Rodando RO3Emu.exe local com dados exportados; configurações padrão.
     validations:
       required: true
   - type: textarea
-    id: steps
+    id: passos
     attributes:
-      label: Steps to reproduce
+      label: Passos para reproduzir o problema
       placeholder: |
-        1. Start ...
-        2. Send / open ...
-        3. Observe ...
+        1. Inicie o emulador...
+        2. Crie um personagem da classe...
+        3. Vá até o mapa... e utilize a habilidade...
+        4. O servidor exibe a mensagem de erro...
     validations:
       required: true
   - type: textarea
-    id: result
+    id: comportamento
     attributes:
-      label: Expected and actual behavior
-      placeholder: Expected ...; instead ...
+      label: Comportamento esperado vs Comportamento ocorrido
+      placeholder: Esperava-se que o monstro sofresse dano; em vez disso, o servidor desconectou o cliente.
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Relevant logs or evidence
-      description: Paste a short sanitized excerpt, error, stack trace, or client message ID. Say if no logs are available.
+      label: Trecho relevante de logs ou evidências
+      description: Cole um trecho sanitizado do log do console ou da pasta logs/. Se você gerou o 'RO3Emu.exe diag', mencione aqui.
       render: text
     validations:
       required: false
   - type: textarea
-    id: checks
+    id: testes_tentados
     attributes:
-      label: Checks already tried
-      description: Build or test command and its result, if applicable.
+      label: Testes ou tentativas de solução já realizadas
+      description: Descreva se tentou reiniciar, recriar a conta ou restaurar o cliente com RO3Emu.exe restore.
     validations:
       required: false

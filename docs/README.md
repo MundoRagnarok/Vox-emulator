@@ -1,12 +1,18 @@
-# Documentation
+# Documentação Vox Emulador 🇧🇷
 
-## Guides: running a server
+Guia rápido e suporte da comunidade brasileira:
+👉 **[Tutorial: Como Executar o Emulador pela Primeira Vez](../TUTORIAL.md)** | **[Discord Mundo Ragnarok](https://discord.gg/UvvJF4W3yK)**
 
-- [GM access](guide/gm-access.md): who may use GM commands (`Ro3Emu:GmAccounts`)
-- [Open content](guide/open-content.md): every feature the client can show is playable (`Ro3Emu:OpenContent`)
-- [Bug reports](guide/feedback.md): the in-game Feedback button and `/bug`, and how to read the reports
-- [Launcher and patch repository](guide/launcher.md): hosting the client for your players
-- [Tests](guide/testing.md): content tests on your exported data, rule tests on the invented fixture that CI runs
+---
+
+## Guias e Tutoriais
+
+- [Tutorial da Primeira Execução](guide/tutorial-primeira-execucao.md): passo a passo para abrir o jogo pela primeira vez
+- [Acesso de GM](guide/gm-access.md): como configurar contas com comandos de Game Master (`Ro3Emu:GmAccounts`)
+- [Conteúdo Aberto (Open Content)](guide/open-content.md): jogabilidade sem bloqueios temporais de temporada (`Ro3Emu:OpenContent`)
+- [Relatório de Bugs](guide/feedback.md): botão de Feedback no jogo e `/bug`
+- [Launcher e Repositório de Atualizações](guide/launcher.md): distribuição para jogadores
+- [Testes](guide/testing.md): testes unitários e de integração com dados exportados
 
 ## Systems: how each part is implemented
 
@@ -26,6 +32,5 @@
 - [World core](research/world-core-evidence.md) · [world effects](research/world-effects-evidence.md) · [NPC interaction](research/world-interaction-evidence.md) · [role operations](research/world-role-operations-evidence.md) · [social](research/world-social-evidence.md) · [MG_Common](research/world-common-evidence.md)
 - [Activities census](research/activities-evidence.md) · [season page](research/season-page-evidence.md) · [season refine](research/season-refine-evidence.md) · [equipment rating](research/equipment-rating-evidence.md)
 
-Citations such as `re/clientB/lua-src/Logic/...lua:123` point into your own decompiled client (see the main
-[README](../README.md#1-export-the-game-data)); `MG_*.proto` files are in `src/Ro3Emu.Server/Protos/romsg/`.
+Citations such as `re/clientB/lua-src/Logic/...lua:123` point into your own decompiled client (see the main [README](../README.md#1-export-the-game-data)); `MG_*.proto` files are in `src/Ro3Emu.Server/Protos/romsg/`.
 Behaviour the client cannot prove is marked *(inferred)*.

@@ -1,7 +1,7 @@
 # Vox Emulador: Projeto Open-Source de Emulador para Ragnarok Online 3 (RO3) PC 🇧🇷
 
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="Arquitetura do Vox Emulador e Mundo do Jogo" width="100%">
+  <img src="docs/assets/vox-banner-clean.png" alt="Vox Emulador - Um emulador open-source para Ragnarok Online 3" width="100%">
 </p>
 
 <p align="center">
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
- <a href="https://discord.gg/UvvJF4W3yK"><img src="https://img.shields.io/badge/Discord-Mundo%20Ragnarok-5865F2?logo=discord&logoColor=white&style=for-the-badge" alt="Discord Mundo Ragnarok"></a>
+  <a href="https://discord.gg/UvvJF4W3yK"><img src="https://img.shields.io/badge/Discord-Mundo%20Ragnarok-5865F2?logo=discord&logoColor=white&style=for-the-badge" alt="Discord Mundo Ragnarok"></a>
   <img src="https://img.shields.io/badge/C%23-.NET%2010-512BD4?logo=dotnet&logoColor=white&style=for-the-badge" alt=".NET 10">
   <img src="https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-blue?style=for-the-badge" alt="GPL-3.0">
   <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-orange?style=for-the-badge" alt="Status">
@@ -239,7 +239,7 @@ Consulte o nosso guia detalhado em [CONTRIBUTING.md](CONTRIBUTING.md) e o nosso 
 
 Venha tirar dúvidas, compartilhar logs, organizar jogatinas e ajudar a desenvolver o projeto de emulador:
 
-👉 **[Entre no nosso Discord do Vox Emulador](https://discord.gg/UvvJF4W3yK)**
+👉 **[Entre no nosso Discord Mundo Ragnarok](https://discord.gg/UvvJF4W3yK)**
 
 ---
 
