@@ -132,6 +132,9 @@ public sealed class GameSession(PhonestChannel channel, TrafficLog traffic)
     /// <summary>The 31029 lock target and the running auto-attack (CombatService).</summary>
     public long LockTarget { get; set; }
     public AttackLoop? Attack { get; set; }
+    /// <summary>Next timestamp (server ms) when a normal attack can start (governed by ASPD).</summary>
+    public long NextNormalAttackMs { get; set; }
+    public bool NoCd { get; set; }
 
     /// <summary>Authoritative cast generation; delayed effects cannot outlive an interrupted/replaced cast.</summary>
     public ActiveSkillCast? SkillCast { get; set; }

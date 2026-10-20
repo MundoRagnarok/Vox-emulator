@@ -54,6 +54,8 @@ public sealed partial class CombatService
             TargetPos = target.Position.Clone(), Face = MonsterService.Angle(source.Position.X, source.Position.Z, target.Position.X, target.Position.Z),
         };
         if (!await AdmitAutomaticCostAsync(source, row, request, session)) { eventAttacks.Remove(source); return; }
+        if (Data.GameData.Int(row, "_iIsNormalAtk") == 1)
+            source.NextNormalAttackMs = Now + SkillMs(source, row);
         await StartCastAsync(source, row, request, session);
     }
     private async Task HitEventPlayersAsync(GameSession source, GameSession[] targets, JsonElement row,

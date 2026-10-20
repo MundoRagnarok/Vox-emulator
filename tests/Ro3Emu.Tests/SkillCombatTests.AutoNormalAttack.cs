@@ -43,4 +43,24 @@ public sealed partial class SkillCombatTests
         await alice.SendGameAsync(CombatService.UseSkill, new CastSkillReq { SkillId = bladeSmash, TargetId = target.Uid });
         Assert.Equal(ErrorCodes.SkillCooldown, (await Next(alice, CombatService.UseSkill, CastSkillRsp.Parser)).Result);
     }
+
+    [ClientDataFact]
+    public async Task RepeatedNormalAttackSpamIsRefusedWithSkillBusy()
+    {
+        await using var alice = await InWorld("Alice");
+        await Gm("alice", "!job 1100");
+        int normal = app.Services.GetRequiredService<SkillService>().NormalAttack(1100);
+        var target = await Target("alice", stationary: true);
+        await Loop.InvokeAsync(() => { target.Hp = 1_000_000_000; return Task.CompletedTask; });
+
+        // First manual normal attack is accepted.
+        await alice.SendGameAsync(CombatService.UseSkill, new CastSkillReq { SkillId = normal, TargetId = target.Uid });
+        var first = await Next(alice, CombatService.UseSkill, CastSkillRsp.Parser);
+        Assert.Equal(0, first.Result);
+
+        // Immediate subsequent click (spamming while swing is still in flight / ASPD cooldown) is refused as busy.
+        await alice.SendGameAsync(CombatService.UseSkill, new CastSkillReq { SkillId = normal, TargetId = target.Uid });
+        var spam = await Next(alice, CombatService.UseSkill, CastSkillRsp.Parser);
+        Assert.Equal(ErrorCodes.SkillBusy, spam.Result);
+    }
 }

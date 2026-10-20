@@ -81,10 +81,24 @@ public sealed partial class CombatService
         if (error == 0)
         {
             int group = (int)GameData.Int(row!.Value, "_iSkillID"), mode = (int)GameData.Int(row.Value, "_iMode");
-            if (Math.Max(s.SkillCds.GetValueOrDefault(group), s.SkillModeCds.GetValueOrDefault((group, mode))) > Now) error = ErrorCodes.SkillCooldown;
+            bool isNormal = GameData.Int(row.Value, "_iIsNormalAtk") == 1;
+            if (!s.NoCd && Math.Max(s.SkillCds.GetValueOrDefault(group), s.SkillModeCds.GetValueOrDefault((group, mode))) > Now) error = ErrorCodes.SkillCooldown;
+            else if (!s.NoCd && isNormal && s.NextNormalAttackMs > Now)
+            {
+                if (s.Attack != null && req.TargetId != 0 && req.TargetId != s.Attack.Target.Uid)
+                {
+                    var newTarget = FindMonster(s.WorldScene, req.TargetId);
+                    if (newTarget != null && CanHitMonster(s, newTarget))
+                    {
+                        s.Attack = new AttackLoop { Target = newTarget, SkillId = s.Attack.SkillId,
+                            NextSwingMs = s.Attack.NextSwingMs, StartX = s.Position.X, StartZ = s.Position.Z };
+                    }
+                }
+                error = ErrorCodes.SkillBusy;
+            }
             // Preserve the established cooldown refusal for a repeated cast, including during its action tail.
             else if (s.SkillCast is { Cancelled: false } active && Now < active.StartMs + active.ChantMs + active.ActionMs
-                && GameData.Int(row.Value, "_bCancelCast") == 0) error = ErrorCodes.SkillBusy;
+                && (isNormal || GameData.Int(row.Value, "_bCancelCast") == 0 || GameData.Int(active.Row, "_bCancelCast") == 0)) error = ErrorCodes.SkillBusy;
             else error = ValidateTarget(s, row.Value, req, origin, owned == null ? WalkSlack(s) : 0);
         }
         var costs = row is { } value ? ResolveCosts(s, value) : new CastCosts();
@@ -131,6 +145,8 @@ public sealed partial class CombatService
             eventAttacks[s] = new EventAttack(playerTarget, loopSkill,
                 Now + SkillMs(s, row.Value) + Math.Max(0, GameData.Int(row.Value, "_iChantFix") + GameData.Int(row.Value, "_iChantVar")) + 1,
                 s.Position.X, s.Position.Z);
+        if (GameData.Int(row.Value, "_iIsNormalAtk") == 1)
+            s.NextNormalAttackMs = Now + SkillMs(s, row.Value);
         await StartCooldownAsync(s, row.Value);
         await StartCastAsync(s, row.Value, req, id, owned);
     }
@@ -364,6 +380,8 @@ public sealed partial class CombatService
         var request = new CastSkillReq { SkillId = (int)GameData.Int(row, "_iID"), TargetId = target?.Uid ?? 0,
             TargetPos = target?.Pos ?? s.Position.Clone(), Face = s.Face };
         if (!await AdmitAutomaticCostAsync(s, row, request, id)) { s.Attack = null; return; }
+        if (GameData.Int(row, "_iIsNormalAtk") == 1)
+            s.NextNormalAttackMs = Now + SkillMs(s, row);
         await StartCastAsync(s, row, request, id);
     }
 
