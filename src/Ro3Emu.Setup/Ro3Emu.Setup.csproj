@@ -8,10 +8,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>RO3Emu</AssemblyName>
+    <AssemblyName>VoxEmulador</AssemblyName>
     <RootNamespace>Ro3Emu.Setup</RootNamespace>
     <Version>1.0.0</Version>
-    <Product>RO3Emu</Product>
+    <Product>Vox Emulador</Product>
     <ApplicationIcon Condition="Exists('..\Ro3Emu.Launcher\ro3emu.ico')">..\Ro3Emu.Launcher\ro3emu.ico</ApplicationIcon>
     <InvariantGlobalization>true</InvariantGlobalization>
     <DebugType>embedded</DebugType>

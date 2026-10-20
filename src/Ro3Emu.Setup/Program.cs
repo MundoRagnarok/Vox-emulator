@@ -3,15 +3,15 @@ using System.Text;
 namespace Ro3Emu.Setup;
 
 /// <summary>
-/// RO3Emu.exe. Double-clicked it finds (or downloads) the game, exports the game data once, starts the bundled server,
+/// VoxEmulador.exe. Double-clicked it finds (or downloads) the game, exports the game data once, starts the bundled server,
 /// patches the client and starts it. See <see cref="Usage"/> for the other modes.
 /// </summary>
 internal static class Program
 {
-    public const string IssuesUrl = "https://github.com/aethai/ro3emu-server/issues";
+    public const string IssuesUrl = "https://github.com/MundoRagnarok/Vox-emulator/issues";
 
     public const string Usage = """
-        RO3Emu.exe [command] [options]
+        VoxEmulador.exe [command] [options]
 
           start              (default) play on your own server on this PC: find the game, export the game data
                              (first run, a few minutes), start the server, patch and start the game
@@ -35,7 +35,7 @@ internal static class Program
           --yes              no questions: take the defaults
           --http-port <n> --micro-port <n> --game-port <n>   server ports (default 5380, 20000, 33100)
           --voice-port <n>   turn on party voice chat on this TCP port, for example 33101 (off by default)
-          --home <folder>    where RO3Emu keeps data, logs and settings (default: next to RO3Emu.exe)
+          --home <folder>    where RO3Emu keeps data, logs and settings (default: next to VoxEmulador.exe)
         """;
 
     /// <summary>Ctrl+C or Q while the server runs: the wait ends and the server is stopped cleanly.</summary>
@@ -51,6 +51,7 @@ internal static class Program
     {
         try { Console.OutputEncoding = Encoding.UTF8; } catch (IOException) { }
         Ui.OwnsConsole();
+        try { Console.Title = "Vox Emulador - Ragnarok Online 3"; } catch { }
         Console.CancelKeyPress += (_, e) =>
         {
             // While the server runs, the first Ctrl+C stops it cleanly; a second one (or one at any other time) ends RO3Emu.
@@ -91,7 +92,7 @@ internal static class Program
                 "install" => await InstallFlow.RunAsync(options, update: false),
                 "update" => await InstallFlow.RunAsync(options, update: true),
                 "diag" => Flows.Diag(options),
-                _ => throw new SetupException($"Unknown command '{options.Command}'.", "Run RO3Emu.exe help."),
+                _ => throw new SetupException($"Unknown command '{options.Command}'.", "Run VoxEmulador.exe help."),
             };
         }
         catch (SetupException e)
@@ -158,12 +159,12 @@ internal sealed class Options
         if (args.Length > 0 && !args[0].StartsWith('-'))
         {
             var command = args[0].ToLowerInvariant();
-            if (!Commands.Contains(command)) throw new SetupException($"Unknown command '{args[0]}'.", "Run RO3Emu.exe help.");
+            if (!Commands.Contains(command)) throw new SetupException($"Unknown command '{args[0]}'.", "Run VoxEmulador.exe help.");
             o.Command = command;
             i = 1;
         }
-        string Value(string name) => i + 1 < args.Length ? args[++i] : throw new SetupException($"{name} needs a value.", "Run RO3Emu.exe help.");
-        int Port(string name) => int.TryParse(Value(name), out var p) && p is > 0 and < 65536 ? p : throw new SetupException($"{name} needs a port number.", "Run RO3Emu.exe help.");
+        string Value(string name) => i + 1 < args.Length ? args[++i] : throw new SetupException($"{name} needs a value.", "Run VoxEmulador.exe help.");
+        int Port(string name) => int.TryParse(Value(name), out var p) && p is > 0 and < 65536 ? p : throw new SetupException($"{name} needs a port number.", "Run VoxEmulador.exe help.");
         for (; i < args.Length; i++)
         {
             switch (args[i].ToLowerInvariant())
@@ -184,7 +185,7 @@ internal sealed class Options
                 case "--voice-port": o.Ports = o.Ports with { Voice = Port("--voice-port") }; break;
                 case "-h": case "--help": o.Command = "help"; break;
                 default:
-                    if (args[i].StartsWith("--")) throw new SetupException($"Unknown option {args[i]}.", "Run RO3Emu.exe help.");
+                    if (args[i].StartsWith("--")) throw new SetupException($"Unknown option {args[i]}.", "Run VoxEmulador.exe help.");
                     o.Positional.Add(args[i]);
                     break;
             }

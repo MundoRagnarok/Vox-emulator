@@ -14,7 +14,7 @@ internal static class Flows
     private static string? HooksDll => ClientDll("Ro3Emu.ClientHooks");
     private static string? LocDll => ClientDll("Ro3Emu.Loc");
 
-    /// <summary>client\&lt;name&gt;.dll next to RO3Emu.exe; for developers the repository's Release or Debug build.</summary>
+    /// <summary>client\&lt;name&gt;.dll next to VoxEmulador.exe; for developers the repository's Release or Debug build.</summary>
     private static string? ClientDll(string project) =>
         SetupHome.Shipped("client", project + ".dll")
         ?? (SetupHome.RepositoryRoot() is { } repo
@@ -71,7 +71,7 @@ internal static class Flows
     {
         if (!Ui.Interactive)
             throw new SetupException("No Ragnarok 3 game folder was found.",
-                "Start RO3Emu.exe with --client \"<folder with ro3.exe>\", or run RO3Emu.exe install to download the game.");
+                "Start VoxEmulador.exe with --client \"<folder with ro3.exe>\", or run VoxEmulador.exe install to download the game.");
         Ui.Warn("No Ragnarok 3 game folder was found on this PC.");
         Ui.Info("[1] I have the game: pick its folder (the one with ro3.exe)");
         if (offerInstall) Ui.Info("[2] Download the game from the official Genesis servers (about 24 GB)");
@@ -82,11 +82,11 @@ internal static class Flows
             var folder = await InstallFlow.InstallNewAsync(options);
             return folder;
         }
-        if (answer != "1") throw new SetupException("No game folder chosen.", "Run RO3Emu.exe again when you have the game.");
+        if (answer != "1") throw new SetupException("No game folder chosen.", "Run VoxEmulador.exe again when you have the game.");
         var picked = FolderPicker.Pick("Ragnarok 3 game folder (the one with ro3.exe)") ?? Ui.Ask("Game folder:");
         foreach (var candidate in new[] { picked, Path.Combine(picked ?? "", "ROO_PC") })
             if (ClientLocator.IsClient(candidate)) return Path.GetFullPath(candidate!);
-        throw new SetupException($"'{picked}' has no ro3.exe.", "Run RO3Emu.exe again and pick the folder that contains ro3.exe.");
+        throw new SetupException($"'{picked}' has no ro3.exe.", "Run VoxEmulador.exe again and pick the folder that contains ro3.exe.");
     }
 
     /// <summary>Stops when the folder cannot work with this RO3Emu, with the reason.</summary>
@@ -97,7 +97,7 @@ internal static class Flows
         if (problems.Count == 0) return;
         var shown = string.Join("\n    ", problems.Take(6)) + (problems.Count > 6 ? $"\n    ... and {problems.Count - 6} more" : "");
         throw new SetupException($"This game folder does not fit this RO3Emu:\n    {shown}",
-            "Run RO3Emu.exe update to repair the game from the official servers. If it still fails, this game version is newer than " +
+            "Run VoxEmulador.exe update to repair the game from the official servers. If it still fails, this game version is newer than " +
             "RO3Emu: get the latest RO3Emu from the releases page.");
     }
 
@@ -141,7 +141,7 @@ internal static class Flows
         return result;
     }
 
-    /// <summary>Our translations, embedded in RO3Emu.exe, in file name order.</summary>
+    /// <summary>Our translations, embedded in VoxEmulador.exe, in file name order.</summary>
     public static List<string> Translations()
     {
         var assembly = Assembly.GetExecutingAssembly();
@@ -155,7 +155,9 @@ internal static class Flows
 
     public static async Task<int> PlayLocalAsync(Options options, bool host)
     {
-        Ui.Title(host ? "RO3Emu - host a Ragnarok 3 server" : "RO3Emu - Ragnarok 3 on your own server");
+        Ui.Title(host ? "Vox Emulador - Servidor de Ragnarok 3 (Host)" : "Vox Emulador - Ragnarok 3 no seu Computador");
+        Ui.Info("Fork comunitário baseado no projeto ro3emu por aethai (GPL-3.0)");
+        Ui.Info("Comunidade Mundo Ragnarok: https://discord.gg/UvvJF4W3yK");
         var client = await ResolveClientAsync(options, offerInstall: true);
         Ui.Step("Checking the game");
         CheckClient(client, needExport: true);
@@ -163,9 +165,9 @@ internal static class Flows
         EnsureGameData(client, options.Reexport);
 
         var serverExe = ServerProcess.FindExecutable()
-            ?? throw new SetupException("The server is missing (server\\Ro3Emu.Server.exe next to RO3Emu.exe).",
+            ?? throw new SetupException("The server is missing (server\\Ro3Emu.Server.exe next to VoxEmulador.exe).",
                 SetupHome.AppDir.StartsWith(Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase)
-                    ? "RO3Emu.exe was started from inside the zip. Extract the whole zip first (right-click it, Extract All), then run RO3Emu.exe from the extracted folder."
+                    ? "VoxEmulador.exe was started from inside the zip. Extract the whole zip first (right-click it, Extract All), then run VoxEmulador.exe from the extracted folder."
                     : "Extract the whole RO3Emu zip again, keeping its folders.");
         var ports = options.Ports;
         string publicHost = "127.0.0.1";
@@ -215,7 +217,7 @@ internal static class Flows
                 bool exited = server.HasExited;
                 server.Dispose();
                 throw new SetupException(exited ? "The server stopped while starting:\n" + Indent(LastLines(tail, 6)) : "The server did not answer within 5 minutes.",
-                    "Run RO3Emu.exe again. If it fails the same way, run RO3Emu.exe start --reexport to export the game data again.");
+                    "Run VoxEmulador.exe again. If it fails the same way, run VoxEmulador.exe start --reexport to export the game data again.");
             }
             Ui.Ok($"running (ready in {Ui.Duration(watch.Elapsed)}, log {server.LogPath})");
         }
@@ -229,7 +231,7 @@ internal static class Flows
             if (host)
             {
                 Ui.Step("Friends can join");
-                Ui.Info($"They run:  RO3Emu.exe join {publicHost}{(ports.Http == 5380 ? "" : ":" + ports.Http)}");
+                Ui.Info($"They run:  VoxEmulador.exe join {publicHost}{(ports.Http == 5380 ? "" : ":" + ports.Http)}");
                 Ui.Info($"Windows may ask whether Ro3Emu.Server may use the network: allow it.");
                 Ui.Info($"For players outside your network, forward TCP ports {ServerProcess.PortList(ports)} on your router");
                 Ui.Info("to this PC and start with --public <your public IP>.");
@@ -273,7 +275,7 @@ internal static class Flows
                 if (server is { HasExited: true })
                 {
                     SetupLog.Write("server output:\n" + server.Tail(40));
-                    throw new SetupException("The server stopped unexpectedly:\n" + Indent(LastLines(server.Tail(), 6)), "Run RO3Emu.exe again.");
+                    throw new SetupException("The server stopped unexpectedly:\n" + Indent(LastLines(server.Tail(), 6)), "Run VoxEmulador.exe again.");
                 }
                 if (game != null && !gameAnnounced && game.HasExited && !GameRunning())
                 {
@@ -313,7 +315,7 @@ internal static class Flows
         {
             int code = game.ExitCode;
             throw new SetupException($"The game closed right after starting (exit code {code}{(code == 70 ? ", launch check refused" : "")}).",
-                "Run RO3Emu.exe again. If it keeps happening, run RO3Emu.exe update to repair the game.");
+                "Run VoxEmulador.exe again. If it keeps happening, run VoxEmulador.exe update to repair the game.");
         }
         Ui.Ok("the game is starting. Log in with any account name and password: the account is created on first login.");
         return game;
@@ -327,11 +329,11 @@ internal static class Flows
         catch (UnauthorizedAccessException e)
         {
             throw new SetupException("The game folder cannot be written: " + e.Message,
-                "Close the game if it is running. If the game is under Program Files, run RO3Emu.exe as administrator once, or move the game to another folder.");
+                "Close the game if it is running. If the game is under Program Files, run VoxEmulador.exe as administrator once, or move the game to another folder.");
         }
         catch (IOException e) when (e.HResult is unchecked((int)0x80070020) or unchecked((int)0x80070021))
         {
-            throw new SetupException("A game file is in use: " + e.Message, "Close the game, then run RO3Emu.exe again.");
+            throw new SetupException("A game file is in use: " + e.Message, "Close the game, then run VoxEmulador.exe again.");
         }
         var map = Path.Combine(SetupHome.DataDir, "loc_en.tsv");
         if (File.Exists(map))
@@ -344,7 +346,7 @@ internal static class Flows
                 File.Copy(map, target, overwrite: true);
             }
         }
-        Ui.Ok($"the game now connects to {serverUrl} (RO3Emu.exe restore undoes this)");
+        Ui.Ok($"the game now connects to {serverUrl} (VoxEmulador.exe restore undoes this)");
         Ui.Warn("Do not use the publisher's launcher to repair this game folder while playing on RO3Emu: it undoes the patch.");
     }
 
@@ -367,7 +369,7 @@ internal static class Flows
         Ui.Title("RO3Emu - join a server");
         var address = options.Positional.FirstOrDefault() ?? Ui.Ask("Server address (ask the server owner, for example 203.0.113.10):");
         var serverUrl = ServerUrl(address)
-            ?? throw new SetupException($"'{address}' is not a server address.", "Use the address the server owner gave you, for example RO3Emu.exe join 203.0.113.10");
+            ?? throw new SetupException($"'{address}' is not a server address.", "Use the address the server owner gave you, for example VoxEmulador.exe join 203.0.113.10");
         var client = await ResolveClientAsync(options, offerInstall: true);
         Ui.Step("Checking the game");
         CheckClient(client, needExport: false);
@@ -389,7 +391,7 @@ internal static class Flows
         EnsureLocMap(client);
         PatchClient(client, serverUrl, pem);
         if (!options.NoLaunch) LaunchGame(client);
-        Ui.Info($"Next time, run RO3Emu.exe join {address} again. This window can be closed.");
+        Ui.Info($"Next time, run VoxEmulador.exe join {address} again. This window can be closed.");
         if (Ui.OwnsConsole() && Ui.Interactive) await Task.Delay(8000);
         return 0;
     }
@@ -433,7 +435,7 @@ internal static class Flows
     public static int Restore(Options options)
     {
         Ui.Title("RO3Emu - restore the game");
-        var client = KnownClient(options) ?? throw new SetupException("No game folder is known.", "Run RO3Emu.exe restore --client \"<folder with ro3.exe>\".");
+        var client = KnownClient(options) ?? throw new SetupException("No game folder is known.", "Run VoxEmulador.exe restore --client \"<folder with ro3.exe>\".");
         Quiet(() => { ClientPatcher.Restore(client); return 0; });
         Ui.Ok($"{client} is back to the original files: it talks to the official servers again.");
         return 0;
