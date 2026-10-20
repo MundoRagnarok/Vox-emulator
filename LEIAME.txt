@@ -1,0 +1,145 @@
+========================================================================
+ Vox Emulador - Ragnarok Online 3 (PC) 🇧🇷
+========================================================================
+
+Projeto de emulador comunitário brasileiro para o cliente PC de Ragnarok
+Online 3 (Genesis), desenvolvido em C# (.NET 10 e SQLite).
+
+Comunidade no Discord: https://discord.gg/UvvJF4W3yK
+Repositório Oficial:   https://github.com/MundoRagnarok/Vox-emulator
+
+========================================================================
+ 🎮 PAINEL DE CONTROLE VISUAL (NOVIDADE: Painel-Vox.bat)
+========================================================================
+
+Criamos uma ferramenta nativa, visual e completa para configurar o seu
+servidor e gerenciar contas sem precisar instalar nada adicional!
+
+Basta dar dois cliques em:
+    
+    👉 Painel-Vox.bat
+
+O que você pode fazer no Painel de Controle:
+
+1. ABA "SERVIDOR E REDE":
+   - Mudar o Nome do Servidor: Digite o nome que você quer que apareça na
+     tela de seleção de servidor do Ragnarok 3.
+   - Onde mudar depois: Você pode alterar por esse painel a qualquer momento
+     ou abrindo o arquivo 'server\appsettings.json' na chave 'ClusterName'.
+   - Endereço IP e Portas: Por padrão configurado como 127.0.0.1 (servidor local),
+     mas você pode colocar o IP da sua rede ou VPN/ZeroTier para amigos jogarem.
+   - Desbloqueios: Opções para liberar todo o conteúdo do jogo sem trava de
+     temporada e ativar Passe de Batalha gratuito.
+
+2. ABA "CONTAS E GAME MASTER":
+   - Modo Livre: Ative esta opção se quiser que toda e qualquer conta criada
+     tenha poderes totais de GM automaticamente.
+   - Cadastrar Conta de Administrador: Digite o usuário e senha desejados e
+     clique em "+ Adicionar GM". Como o servidor cria contas no primeiro
+     login, basta entrar no jogo com esse login e senha para já nascer como GM!
+   - Deletar Usuários / Remover GM:
+     * Selecione qualquer conta na lista e clique em "Deletar Usuário".
+     * O painel remove os privilégios de GM e, se o jogo já tiver criado o
+       banco de dados SQLite ('ro3emu.db'), pergunta se você também deseja
+       apagar o registro no banco para recriar o usuário do zero.
+   - Botão "Limpar Todos": Remove todos os administradores da lista com 1 clique.
+   - Comandos GM no chat do jogo:
+       !item <id> [quantidade]   (Adiciona itens e equipamentos ao inventário)
+       !zeny <quantidade>        (Adiciona moedas Zeny)
+       !lvl <nível>              (Aumenta o nível base)
+       !tele <mapa> <x> <y>      (Teleporta para qualquer coordenadas)
+       !speed <velocidade>       (Ajusta velocidade de movimento)
+       !heal / !kill             (Recupera vida completa ou derrota alvo)
+
+3. ABA "RATES E DROPS":
+   - Presets Rápidos: Escolha com 1 clique entre Low Rate (1x Oficial),
+     Mid Rate (25x) ou High Rate (100x).
+   - Multiplicadores de EXP Base, EXP de Classe (Job) e Drops de Itens e Cartas.
+
+4. BOTÕES INFERIORES:
+   - "SALVAR CONFIGURAÇÕES": Grava tudo imediatamente nos arquivos do servidor.
+   - "INICIAR O JOGO": Salva e abre o jogo VoxEmulador.exe automaticamente!
+
+========================================================================
+ INÍCIO RÁPIDO: COMO JOGAR DIRETO
+========================================================================
+
+Caso queira iniciar diretamente com as configurações padrão:
+Basta descompactar esta pasta e dar dois cliques em:
+
+    VoxEmulador.exe
+
+* Se o Windows exibir a mensagem "O Windows protegeu o seu computador"
+  (devido à ausência de certificado comercial pago da Microsoft), clique em
+  "Mais informações" e depois em "Executar assim mesmo".
+
+O que acontece na PRIMEIRA EXECUÇÃO (Automático):
+  1. O Vox Emulador localiza a pasta do seu jogo Ragnarok 3 (a pasta que
+     contém o arquivo 'ro3.exe') ou pede para você informar o caminho.
+     Caso ainda NÃO tenha o jogo, ele perguntará se você deseja baixá-lo
+     diretamente dos servidores oficiais da Genesis (cerca de 24 GB, com
+     verificação de integridade de cada arquivo).
+  2. Exporta os dados necessários do cliente (mapas, habilidades e tabelas,
+     em cerca de 1 a 2 minutos).
+  3. Inicia o servidor local nesta máquina.
+  4. Aplica um patch seguro no jogo (as DLLs originais ficam intactas em
+     'ro3emu-backup') e abre o cliente automaticamente.
+
+COMO ENTRAR NO JOGO:
+  - Na tela de login, digite qualquer usuário e senha: sua conta será
+    criada automaticamente no primeiro login!
+  - Mantenha a janela do console aberta enquanto joga. Para fechar o
+    servidor com segurança, pressione Q (ou feche a janela).
+
+------------------------------------------------------------------------
+ COMANDOS DISPONÍVEIS NO PROMPT DE COMANDO
+------------------------------------------------------------------------
+
+Abra o Prompt de Comando (CMD) ou PowerShell nesta pasta para executar:
+
+  VoxEmulador.exe               Joga no seu próprio servidor local (modo padrão)
+  VoxEmulador.exe host          Inicia servidor compartilhado para amigos entrarem
+                                (--gm <conta> define contas com acesso de GM)
+  VoxEmulador.exe join <IP>     Conecta seu jogo ao servidor de um amigo
+  VoxEmulador.exe install       Baixa o cliente limpo direto dos servidores oficiais
+  VoxEmulador.exe update        Atualiza o cliente a partir dos servidores oficiais
+  VoxEmulador.exe restore       Desfaz o patch e restaura os arquivos originais do jogo
+  VoxEmulador.exe check         Verifica se a versão do jogo é compatível
+  VoxEmulador.exe diag          Gera o pacote de diagnóstico para relatórios de bugs
+  VoxEmulador.exe help          Exibe a ajuda completa de parâmetros
+
+------------------------------------------------------------------------
+ O QUE ESTE PROGRAMA ALTERA NO SEU COMPUTADOR
+------------------------------------------------------------------------
+
+  - Na pasta do jogo: algumas DLLs em ro3_Data\Managed (os originais são
+    guardados intactos em 'ro3emu-backup'; execute 'VoxEmulador.exe restore'
+    para voltar ao jogo original) e 'ro3emu\loc_en.tsv'.
+  - Nesta pasta: 'data\' (banco de dados SQLite com seus personagens e contas),
+    'logs\' e configurações. Basta deletar esta pasta para desinstalar.
+  - AVISO: Não utilize a função "Reparar" do launcher oficial da desenvolvedora
+    enquanto estiver jogando no Vox Emulador, pois ele removerá o patch.
+    Caso isso ocorra, basta rodar o VoxEmulador.exe novamente.
+
+------------------------------------------------------------------------
+ CRÉDITOS E RECONHECIMENTO AO PROJETO ORIGINAL
+------------------------------------------------------------------------
+
+O Vox Emulador é um fork comunitário baseado no projeto pioneiro de
+engenharia reversa 'ro3emu-server' desenvolvido por aethai:
+👉 https://github.com/aethai/ro3emu-server
+
+Deixamos aqui nosso mais sincero agradecimento a aethai e a todos os
+contribuidores da base original pela excelência técnica na documentação
+do protocolo e arquitetura do servidor. O código deste projeto segue sob
+os termos da licença livre GNU General Public License v3.0 (GPL-3.0).
+
+------------------------------------------------------------------------
+ AVISO LEGAL (DISCLAIMER)
+------------------------------------------------------------------------
+
+O Vox Emulador é um projeto independente de pesquisa e interoperabilidade.
+Não possui vínculo, afiliação ou endosso da Gravity Co., Ltd. ou de
+quaisquer distribuidoras de Ragnarok Online. Não distribui arquivos
+protegidos por direitos autorais do jogo. Ragnarok Online é marca
+registrada de Gravity Co., Ltd.

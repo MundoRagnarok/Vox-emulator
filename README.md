@@ -71,21 +71,28 @@ Siga este tutorial passo a passo para configurar o emulador e abrir o Ragnarok O
 ### Método 1: Executando pela Release Pré-Compilada (Recomendado para Jogadores)
 
 1. **Baixe o Emulador:**
-   - Faça o download do arquivo `RO3Emu-win-x64.zip` na seção de [Releases](https://github.com/MundoRagnarok/Vox-emulator/releases).
-   - Extraia o conteúdo em uma pasta de sua escolha (ex: `C:\VoxEmulador\`).
+   - Faça o download do arquivo `Vox-Emulador-v1.0.5-BR.zip` na seção de [Releases](https://github.com/MundoRagnarok/Vox-emulator/releases).
+   - Extraia o conteúdo em uma pasta de sua escolha (ex: `C:\VoxEmulador\` ou `F:\Vox Emulador\`).
 
-2. **Execute o `RO3Emu.exe`:**
-   - Dê dois cliques em **`RO3Emu.exe`**.
+2. **Configure Facilmente com o Painel Visual (`Painel-Vox.bat`):**
+   - Dê dois cliques em **`Painel-Vox.bat`** para abrir o **Painel de Controle do Vox Emulador** (100% nativo do Windows, sem necessidade de instalar programas externos).
+   - **Na aba Servidor e Rede:** Escolha o nome do seu servidor (exibido na tela de login), ajuste IP e portas.
+   - **Na aba Contas e Game Master:** Crie seu login e senha de GM, gerencie ou delete contas da lista de administradores.
+   - **Na aba Rates e Drops:** Escolha as taxas de EXP e Drop com 1 clique (Low Rate 1x, Mid Rate 25x ou High Rate 100x).
+   - Clique em **SALVAR CONFIGURAÇÕES** ou diretamente em **INICIAR O JOGO**!
+
+3. **Execução Direta sem Painel (Opcional):**
+   - Você também pode dar dois cliques diretamente em **`VoxEmulador.exe`**.
    - *Aviso do Windows Defender:* Como executáveis comunitários de código aberto não possuem certificado comercial pago, o SmartScreen pode exibir o alerta *"O Windows protegeu o seu computador"*. Clique em **Mais informações** e depois em **Executar assim mesmo**.
 
-3. **O que acontece na Primeira Execução (Automático):**
+4. **O que acontece na Primeira Execução (Automático):**
    - **Se você já possui o jogo:** O executável tentará localizar a pasta do Ragnarok 3 (`ROO_PC` contendo `ro3.exe`) ou pedirá para você informar o caminho.
    - **Se você NÃO possui o jogo instalado:** O próprio executável se oferecerá para baixar o cliente diretamente dos servidores oficiais da Genesis (cerca de 24 GB) com validação de integridade.
    - **Preparação de dados:** O emulador levará cerca de 1 a 2 minutos para exportar tabelas de configuração, mapas e habilidades, aplicando o patch seguro nas DLLs do cliente (todas as DLLs originais são salvas intactas na pasta `ro3emu-backup`).
    - O emulador iniciará os serviços locais e abrirá a janela do Ragnarok Online 3 automaticamente!
 
-4. **Entrando no Jogo:**
-   - Na tela de login do Ragnarok 3, digite **qualquer usuário e senha**. A sua conta será criada automaticamente no primeiro login!
+5. **Entrando no Jogo:**
+   - Na tela de login do Ragnarok 3, digite **qualquer usuário e senha** (ou os dados de GM que você cadastrou no painel): sua conta será criada automaticamente no primeiro login!
    - Mantenha a janela do console aberta enquanto joga. Para fechar o emulador com segurança, pressione **Q** na janela ou feche-a.
 
 ---
