@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace Ro3Emu.Setup;
 
@@ -148,6 +148,7 @@ internal sealed class Options
     public string? Only { get; private set; }
     public bool ListInputs { get; private set; }
     public bool ServerFiles { get; private set; }
+    public bool Tutorial { get; private set; }
     public ServerProcess.Ports Ports { get; private set; } = new();
 
     private static readonly HashSet<string> Commands = ["start", "host", "join", "restore", "check", "export", "install", "update", "diag", "help"];
@@ -179,6 +180,7 @@ internal sealed class Options
                 case "--only": o.Only = Value("--only"); break;
                 case "--list-inputs": o.ListInputs = true; break;
                 case "--server-files": o.ServerFiles = true; break;
+                case "--tutorial": case "--sem-jogo": o.Tutorial = true; break;
                 case "--http-port": o.Ports = o.Ports with { Http = Port("--http-port") }; break;
                 case "--micro-port": o.Ports = o.Ports with { MicroGate = Port("--micro-port") }; break;
                 case "--game-port": o.Ports = o.Ports with { GameGate = Port("--game-port") }; break;

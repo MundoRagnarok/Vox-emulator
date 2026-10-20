@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -39,54 +39,69 @@ internal static class Flows
     {
         var settings = Settings.Load();
         string? chosen = null;
-        if (options.ClientDir != null)
+
+        bool isTutorial = options.Tutorial
+            || Environment.GetEnvironmentVariable("VOX_TUTORIAL") == "1"
+            || File.Exists(Path.Combine(SetupHome.AppDir, "modo-tutorial.txt"))
+            || (Environment.ProcessPath != null && Path.GetFileNameWithoutExtension(Environment.ProcessPath).Contains("Tutorial", StringComparison.OrdinalIgnoreCase));
+
+        if (!isTutorial)
         {
-            if (!ClientLocator.IsClient(options.ClientDir))
-                throw new SetupException($"'{options.ClientDir}' is not a Ragnarok 3 game folder (no ro3.exe and ro3_Data\\Managed in it).",
-                    "Give the folder that contains ro3.exe, for example --client \"C:\\Games\\Genesis\\ROO_PC\".");
-            chosen = Path.GetFullPath(options.ClientDir);
+            if (options.ClientDir != null)
+            {
+                if (!ClientLocator.IsClient(options.ClientDir))
+                    throw new SetupException($"'{options.ClientDir}' is not a Ragnarok 3 game folder (no ro3.exe and ro3_Data\\Managed in it).",
+                        "Give the folder that contains ro3.exe, for example --client \"C:\\Games\\Genesis\\ROO_PC\".");
+                chosen = Path.GetFullPath(options.ClientDir);
+            }
+            else if (ClientLocator.IsClient(settings.ClientDir)) chosen = settings.ClientDir;
+            else
+            {
+                Ui.Step("Procurando instalacao do jogo");
+                var found = ClientLocator.Candidates(settings);
+                if (found.Count == 1) chosen = found[0];
+                else if (found.Count > 1)
+                {
+                    for (int i = 0; i < found.Count; i++) Ui.Info($"[{i + 1}] {found[i]}  ({ClientLocator.InstalledRelease(found[i]) ?? "release unknown"})");
+                    var answer = Ui.Ask("Qual delas deseja usar?", "1");
+                    chosen = int.TryParse(answer, out var n) && n >= 1 && n <= found.Count ? found[n - 1] : found[0];
+                }
+                else chosen = await NoClientFoundAsync(options, offerInstall);
+            }
         }
-        else if (ClientLocator.IsClient(settings.ClientDir)) chosen = settings.ClientDir;
         else
         {
-            Ui.Step("Looking for the game");
-            var found = ClientLocator.Candidates(settings);
-            if (found.Count == 1) chosen = found[0];
-            else if (found.Count > 1)
-            {
-                for (int i = 0; i < found.Count; i++) Ui.Info($"[{i + 1}] {found[i]}  ({ClientLocator.InstalledRelease(found[i]) ?? "release unknown"})");
-                var answer = Ui.Ask("Which one?", "1");
-                chosen = int.TryParse(answer, out var n) && n >= 1 && n <= found.Count ? found[n - 1] : found[0];
-            }
-            else chosen = await NoClientFoundAsync(options, offerInstall);
+            Ui.Step("Modo Tutorial: Procurando instalacao do Ragnarok 3...");
+            chosen = await NoClientFoundAsync(options, offerInstall);
         }
+
         settings = Settings.Load();
         settings.ClientDir = chosen;
         settings.Save();
-        Ui.Ok($"Game folder: {chosen}  ({ClientLocator.InstalledRelease(chosen) ?? "release unknown"})");
+        Ui.Ok($"Pasta do jogo: {chosen}  ({ClientLocator.InstalledRelease(chosen) ?? "release reconhecida"})");
         return chosen;
     }
 
     private static async Task<string> NoClientFoundAsync(Options options, bool offerInstall)
     {
         if (!Ui.Interactive)
-            throw new SetupException("No Ragnarok 3 game folder was found.",
-                "Start VoxEmulador.exe with --client \"<folder with ro3.exe>\", or run VoxEmulador.exe install to download the game.");
-        Ui.Warn("No Ragnarok 3 game folder was found on this PC.");
-        Ui.Info("[1] I have the game: pick its folder (the one with ro3.exe)");
-        if (offerInstall) Ui.Info("[2] Download the game from the official Genesis servers (about 24 GB)");
-        Ui.Info("[3] Quit");
-        var answer = Ui.Ask("Your choice:", "1");
+            throw new SetupException("Nenhuma pasta de instalacao do Ragnarok 3 foi encontrada.",
+                "Inicie VoxEmulador.exe com --client \"<pasta com ro3.exe>\", ou execute VoxEmulador.exe install para baixar o jogo.");
+        Ui.Warn("Nenhuma pasta de instalacao do Ragnarok 3 foi encontrada neste computador.");
+        Ui.Info("[1] Ja possuo o jogo: escolher a pasta manualmente (onde esta o ro3.exe)");
+        if (offerInstall) Ui.Info("[2] Baixar o jogo oficial da Genesis (download direto, cerca de 24 GB)");
+        Ui.Info("[3] Sair");
+        var answer = Ui.Ask("Digite sua escolha:", "1");
         if (answer == "2" && offerInstall)
         {
             var folder = await InstallFlow.InstallNewAsync(options);
             return folder;
         }
-        if (answer != "1") throw new SetupException("No game folder chosen.", "Run VoxEmulador.exe again when you have the game.");
-        var picked = FolderPicker.Pick("Ragnarok 3 game folder (the one with ro3.exe)") ?? Ui.Ask("Game folder:");
+        if (answer != "1") throw new SetupException("Nenhuma pasta de jogo foi selecionada.", "Execute o VoxEmulador.exe novamente quando tiver o jogo.");
+        var picked = FolderPicker.Pick("Selecione a pasta do Ragnarok 3 (a pasta com ro3.exe)") ?? Ui.Ask("Pasta do jogo:");
         foreach (var candidate in new[] { picked, Path.Combine(picked ?? "", "ROO_PC") })
             if (ClientLocator.IsClient(candidate)) return Path.GetFullPath(candidate!);
-        throw new SetupException($"'{picked}' has no ro3.exe.", "Run VoxEmulador.exe again and pick the folder that contains ro3.exe.");
+        throw new SetupException($"'{picked}' nao contem o arquivo ro3.exe.", "Execute VoxEmulador.exe novamente e selecione a pasta correta com ro3.exe.");
     }
 
     /// <summary>Stops when the folder cannot work with this RO3Emu, with the reason.</summary>

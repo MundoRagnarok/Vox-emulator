@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Ro3Emu.Setup.Install;
 
@@ -54,7 +54,7 @@ internal static class InstallFlow
         // The fixed drive with the most free space, in a plain folder (no Program Files: no administrator needed).
         var drive = DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed && d.IsReady).OrderByDescending(d => d.AvailableFreeSpace).FirstOrDefault();
         var suggestion = Path.Combine(drive?.RootDirectory.FullName ?? SetupHome.Root, "Games", "Ragnarok3");
-        var answer = Ui.Ask("Folder to install the game into:", suggestion);
+        var answer = Ui.Ask("Pasta onde deseja instalar o jogo:", suggestion);
         return Path.GetFullPath(answer.Trim('"'));
     }
 

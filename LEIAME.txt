@@ -61,6 +61,24 @@ O que você pode fazer no Painel de Controle:
    - "INICIAR O JOGO": Salva e abre o jogo VoxEmulador.exe automaticamente!
 
 ========================================================================
+ 🎥 MODO TUTORIAL / GRAVAÇÃO YOUTUBE (Tutorial-Modo-Demonstracao.bat)
+========================================================================
+
+Se você vai gravar um tutorial em vídeo ou quer testar como é a experiência
+de quem ainda NÃO possui o Ragnarok 3 instalado no computador:
+
+Dê dois cliques em:
+    👉 Tutorial-Modo-Demonstracao.bat (ou VoxEmulador-Tutorial.exe)
+
+O que este modo faz:
+  - Ignora qualquer pasta já existente no seu computador ou no registro.
+  - Abre diretamente o assistente oficial em Português com as opções:
+      [1] Já possuo o jogo: escolher a pasta manualmente (onde está o ro3.exe)
+      [2] Baixar o jogo oficial da Genesis (download direto, cerca de 24 GB)
+      [3] Sair
+  - Perfeito para demonstrar em vídeo todo o processo de download e instalação!
+
+========================================================================
  INÍCIO RÁPIDO: COMO JOGAR DIRETO
 ========================================================================
 
