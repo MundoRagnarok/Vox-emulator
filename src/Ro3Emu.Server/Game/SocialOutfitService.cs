@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Google.Protobuf;
 using Romsg;
 using Ro3Emu.Server.Accounts;
@@ -43,7 +43,27 @@ public sealed class SocialOutfitService
     public SocialOutfitService(GameData data, RoleStore roles, CharacterService character, Deadlines deadlines, TimeProvider clock)
     {
         this.data = data; this.roles = roles; this.character = character; this.deadlines = deadlines; this.clock = clock;
-        character.JobChanged.Add(s => s.Synced.ContainsKey(Sync) ? SyncAsync(s) : Task.CompletedTask);
+        character.JobChanged.Add(async s =>
+        {
+            if (s.SocialOutfit != null && s.Role != null)
+            {
+                int career = s.Progress?.Career ?? s.Role.Career;
+                if (s.SocialOutfit.SocialOutfitEquip.TryGetValue(Head, out var eq) && data.Row("SocialOutfitConfig", eq.CfgId) is { } row)
+                {
+                    long job = GameData.Int(row, "_iJobID");
+                    if (job > 0 && job != career)
+                    {
+                        var view = View(data, s.Role.Sex, career, s.SocialOutfit, Now);
+                        if (view.SocialOutfitEquip.TryGetValue(Head, out var curHead))
+                        {
+                            s.SocialOutfit.SocialOutfitEquip[Head] = new DBSocialOutfitEquip { CfgId = curHead.CfgId };
+                            await CommitAsync(s, s.SocialOutfit, "job_change_head");
+                        }
+                    }
+                }
+            }
+            if (s.Synced.ContainsKey(Sync)) await SyncAsync(s);
+        });
         character.RegisterItemAction(UnlockAction, UseUnlockItemAsync);
     }
 
@@ -54,6 +74,20 @@ public sealed class SocialOutfitService
         var bytes = roles.LoadSocialOutfit(s.Role!.Id);
         s.SocialOutfit = bytes is { Length: > 0 } ? DBSocialOutfit.Parser.ParseFrom(bytes) : new DBSocialOutfit();
         await PruneAsync(s);
+        int career = s.Progress?.Career ?? s.Role!.Career;
+        if (s.SocialOutfit.SocialOutfitEquip.TryGetValue(Head, out var eq) && data.Row("SocialOutfitConfig", eq.CfgId) is { } row)
+        {
+            long job = GameData.Int(row, "_iJobID");
+            if (job > 0 && job != career)
+            {
+                var view = View(data, s.Role.Sex, career, s.SocialOutfit, Now);
+                if (view.SocialOutfitEquip.TryGetValue(Head, out var curHead))
+                {
+                    s.SocialOutfit.SocialOutfitEquip[Head] = new DBSocialOutfitEquip { CfgId = curHead.CfgId };
+                    await CommitAsync(s, s.SocialOutfit, "career_head_update");
+                }
+            }
+        }
         await SyncAsync(s);
     }
 
@@ -78,7 +112,19 @@ public sealed class SocialOutfitService
             }
         foreach (var (type, equip) in stored?.SocialOutfitEquip ?? [])
             if (info.SocialOutfitContainer.TryGetValue(type, out var container) && container.SocialOutfitInfos.ContainsKey(equip.CfgId))
+            {
+                if (type == Head && data.Row("SocialOutfitConfig", equip.CfgId) is { } row)
+                {
+                    long job = GameData.Int(row, "_iJobID");
+                    if (job > 0 && job != career)
+                    {
+                        // Stored was a class head from an old job (e.g. Novice 1000 vs current Lord Knight 1300).
+                        // Keep info.SocialOutfitEquip[type], which Build already set to current career head.
+                        continue;
+                    }
+                }
                 info.SocialOutfitEquip[type] = new DBSocialOutfitEquip { CfgId = equip.CfgId };
+            }
         return info;
     }
 

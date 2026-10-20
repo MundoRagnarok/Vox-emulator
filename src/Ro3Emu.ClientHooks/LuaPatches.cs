@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace Ro3Emu.ClientHooks
@@ -49,12 +49,17 @@ namespace Ro3Emu.ClientHooks
 
         private static object _doneEnv;
         private static int _frame;
-        // The controller class tables already wrapped in this LuaEnv (their modules load on first use of the UI).
-        private static Obf_R.Obf_ff _global, _topBarClass, _evePanelClass;
-        private static Obf_R.Obf_Ef _topBarState, _topBarRefresh, _evePanelOriginal;
+        private static LA_LuaManager _manager;
+        private static Obf_R.Obf_ff _global, _topBarClass, _evePanelClass, _targetAvatarClass, _targetAvatarPcClass, _playerInfoHelper, _teamFiveListCtrl, _avatarWidgetCtrl;
+        private static Obf_R.Obf_Ef _topBarState, _topBarRefresh, _evePanelOriginal, _originalCareerClick, _originalOpenInfoPanel, _originalAvatarRefreshSocial, _originalAvatarSetSocialFrame;
+        public delegate void OpenInfoPanelFunc(Obf_R.Obf_ff param, object callback, object transform, object hideBottom);
+        public delegate void SetSocialAvatarFrameFunc(Obf_R.Obf_ff self, object frameId);
         // Kept alive here: Lua holds the pushed delegates only weakly through xLua's object pool.
         private static readonly SelfMethod TopBarStateWrapper = UpdateCountdownState, TopBarRefreshWrapper = RefreshCountdown,
-            EvePanelWrapper = RefreshEveTimeText;
+            EvePanelWrapper = RefreshEveTimeText, TargetAvatarClickWrapper = OnTargetAvatarClicked,
+            TeamFiveRefreshAvatarWrapper = OnRefreshTeamFiveAvatarWidget, AvatarRefreshSocialWrapper = OnAvatarRefreshSocial;
+        private static readonly OpenInfoPanelFunc OpenInfoPanelWrapper = OnOpenPlayerInfoPanel;
+        private static readonly SetSocialAvatarFrameFunc AvatarSetSocialFrameWrapper = OnSetSocialAvatarFrame;
 
         /// <summary>A Lua method called as self:Method().</summary>
         public delegate void SelfMethod(Obf_R.Obf_ff self);
@@ -72,8 +77,16 @@ namespace Ro3Emu.ClientHooks
                 if (env == null) { Report(why); return; }
                 var global = ((Obf_R.Obf_Cf)env).Obf_A;
                 MapModules.Install(env, global); // own once-per-LuaEnv guard; needs only package.loaded
-                if (ReferenceEquals(env, _doneEnv)) { ServerDayGates.Probe(); return; }
-                _topBarClass = _evePanelClass = null;
+                if (ReferenceEquals(env, _doneEnv))
+                {
+                    ServerDayGates.Probe();
+                    RiftEventPatches.Tick();
+                    MarriageButton.Tick();
+                    if (_targetAvatarClass == null && manager != null) PatchTargetAvatar(manager, global);
+                    if (_teamFiveListCtrl == null && manager != null) PatchTeamAvatar(manager, global);
+                    return;
+                }
+                _topBarClass = _evePanelClass = _targetAvatarClass = _targetAvatarPcClass = _teamFiveListCtrl = _avatarWidgetCtrl = null;
                 // GlobalRequire sets LC_ItemShowHelper once the game's modules are up; before that, requiring is unsafe.
                 if (global == null || global.Obf_RuA<object>("LC_ItemShowHelper") == null) { Report("game helpers not loaded"); return; }
                 var item = Module(manager, global, "lc_itemshowfunc");
@@ -92,6 +105,10 @@ namespace Ro3Emu.ClientHooks
                 if (param != null) param.Obf_luA<string, object>("StallsNameCharacterLimit", (long)StallNameMaxLength);
                 _doneEnv = env;
                 PatchCountdowns(manager, global);
+                PatchTargetAvatar(manager, global);
+                PatchTeamAvatar(manager, global);
+                DirectTradeHook.Install(global);
+                StealthGhostHook.Install(global);
                 var functionHelper = Module(manager, global, "lc_functionhelper");
                 FeedbackButton.Install(global, functionHelper);
                 PassChallenges.Install(global);
@@ -99,6 +116,8 @@ namespace Ro3Emu.ClientHooks
                     global.Obf_RuA<Obf_R.Obf_ff>("LC_SeasonHelper") ?? Module(manager, global, "lc_seasonhelper"),
                     global.Obf_RuA<Obf_R.Obf_ff>("LC_SeasonExplorationHelper") ?? Module(manager, global, "lc_seasonexplorationhelper"));
                 PersonalCards.Install((Obf_R.Obf_Cf)env, Module(manager, global, "lc_dal_personal"));
+                MarriageButton.Install(global, functionHelper);
+                RiftEventPatches.Install(manager, global);
                 Debug.Log("[Ro3Emu.LuaPatches] lc_itemshowfunc: " + added + " card show-func method(s) added; stall name limit "
                     + (param != null ? StallNameMaxLength.ToString() : "not set (publicparamconfig missing)"));
             }
@@ -144,6 +163,479 @@ namespace Ro3Emu.ClientHooks
                 if (_evePanelOriginal != null) panel.Obf_luA<string, SelfMethod>("_refreshTimeText", EvePanelWrapper);
                 Debug.Log("[Ro3Emu.LuaPatches] Prelude panel countdown " + (_evePanelOriginal != null ? "wrapped" : "method not found"));
             }
+        }
+
+        private static void PatchTargetAvatar(LA_LuaManager manager, Obf_R.Obf_ff global)
+        {
+            try
+            {
+                // 1. Hook OpenPlayerInfomationPanel on LC_PlayerInfoHelper
+                if (_playerInfoHelper == null)
+                {
+                    _playerInfoHelper = global.Obf_RuA<Obf_R.Obf_ff>("LC_PlayerInfoHelper") 
+                                     ?? Module(manager, global, "lc_playerinfohelper");
+                    if (_playerInfoHelper != null)
+                    {
+                        _originalOpenInfoPanel = _playerInfoHelper.Obf_RuA<Obf_R.Obf_Ef>("OpenPlayerInfomationPanel");
+                        if (_originalOpenInfoPanel != null)
+                        {
+                            _playerInfoHelper.Obf_luA<string, OpenInfoPanelFunc>("OpenPlayerInfomationPanel", OpenInfoPanelWrapper);
+                            Debug.Log("[Ro3Emu.LuaPatches] LC_PlayerInfoHelper.OpenPlayerInfomationPanel hooked for Trade Context Menu");
+                        }
+                    }
+                }
+
+                if (global.Obf_RuA<object>("OpenPlayerInfomationPanel") != null)
+                {
+                    global.Obf_luA<string, OpenInfoPanelFunc>("OpenPlayerInfomationPanel", OpenInfoPanelWrapper);
+                }
+
+                // 2. Hook _onCareerClick on TargetAvatar classes
+                var baseClass = global.Obf_RuA<Obf_R.Obf_ff>("UI_Sys_Main_TargetAvatarInfoWidgetBaseCtrl") 
+                             ?? Module(manager, global, "ui_sys_main_targetavatarinfowidgetbasectrl");
+                if (_targetAvatarClass == null && baseClass != null)
+                {
+                    _targetAvatarClass = baseClass;
+                    _originalCareerClick = baseClass.Obf_RuA<Obf_R.Obf_Ef>("_onCareerClick");
+                    if (_originalCareerClick != null)
+                    {
+                        baseClass.Obf_luA<string, SelfMethod>("_onCareerClick", TargetAvatarClickWrapper);
+                        Debug.Log("[Ro3Emu.LuaPatches] target avatar click hooked on base class for Trade");
+                    }
+                }
+
+                var pcClass = global.Obf_RuA<Obf_R.Obf_ff>("UI_Sys_Main_TargetAvatarInfoWidget_PCCtrl") 
+                           ?? Module(manager, global, "ui_sys_main_targetavatarinfowidget_pcctrl");
+                if (_targetAvatarPcClass == null && pcClass != null)
+                {
+                    _targetAvatarPcClass = pcClass;
+                    if (_originalCareerClick == null) _originalCareerClick = pcClass.Obf_RuA<Obf_R.Obf_Ef>("_onCareerClick");
+                    pcClass.Obf_luA<string, SelfMethod>("_onCareerClick", TargetAvatarClickWrapper);
+                    Debug.Log("[Ro3Emu.LuaPatches] target avatar click hooked on PC class for Trade");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] PatchTargetAvatar error: " + ex);
+            }
+        }
+
+        private static void OnOpenPlayerInfoPanel(Obf_R.Obf_ff param, object callback, object transform, object hideBottom)
+        {
+            try
+            {
+                long targetId = 0;
+                string targetName = null;
+
+                if (param != null)
+                {
+                    var guidObj = param.Obf_RuA<object>("m_iGuid");
+                    if (guidObj is long l) targetId = l;
+                    else if (guidObj is double d) targetId = (long)d;
+                }
+
+                var hud = GameObject.Find("UI_Sys_Main_TargetAvatarInfoWidget_PC(Clone)") 
+                       ?? GameObject.Find("UI_Sys_Main_TargetAvatarInfoWidget_PC");
+                Vector3 anchorPos = Input.mousePosition;
+
+                if (hud != null)
+                {
+                    foreach (var t in hud.GetComponentsInChildren<TMPro.TMP_Text>(true))
+                    {
+                        if (t != null && t.name.Contains("NameDisplay") && !string.IsNullOrEmpty(t.text))
+                        {
+                            targetName = t.text.Trim();
+                            break;
+                        }
+                    }
+                    if (string.IsNullOrEmpty(targetName))
+                    {
+                        foreach (var t in hud.GetComponentsInChildren<UnityEngine.UI.Text>(true))
+                        {
+                            if (t != null && t.name.Contains("NameDisplay") && !string.IsNullOrEmpty(t.text))
+                            {
+                                targetName = t.text.Trim();
+                                break;
+                            }
+                        }
+                    }
+
+                    var allRects = hud.GetComponentsInChildren<RectTransform>(true);
+                    foreach (var r in allRects)
+                    {
+                        if (r != null && (r.name.Contains("Avatar") || r.name.Contains("Career")))
+                        {
+                            anchorPos = RectTransformUtility.WorldToScreenPoint(null, r.position);
+                            break;
+                        }
+                    }
+                }
+
+                if (string.IsNullOrEmpty(targetName) && targetId > 0 && _playerInfoHelper != null)
+                {
+                    var getNameFunc = _playerInfoHelper.Obf_RuA<Obf_R.Obf_Ef>("GetName");
+                    if (getNameFunc != null)
+                    {
+                        var res = getNameFunc.Obf_HuA(targetId);
+                        if (res != null && res.Length > 0 && res[0] is string s) targetName = s;
+                    }
+                }
+
+                long selfGuid = GetSelfGuid();
+                if (targetId > 0 && targetId == selfGuid)
+                {
+                    _originalOpenInfoPanel?.Obf_HuA(param, callback, transform, hideBottom);
+                    return;
+                }
+
+                if (!string.IsNullOrEmpty(targetName))
+                {
+                    TargetContextMenu.Show(targetName, targetId, anchorPos, () =>
+                    {
+                        _originalOpenInfoPanel?.Obf_HuA(param, callback, transform, hideBottom);
+                    });
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] OnOpenPlayerInfoPanel error: " + ex);
+            }
+
+            _originalOpenInfoPanel?.Obf_HuA(param, callback, transform, hideBottom);
+        }
+
+        private static void OnTargetAvatarClicked(Obf_R.Obf_ff self)
+        {
+            try
+            {
+                if (self != null)
+                {
+                    string targetName = null;
+                    long targetId = 0;
+
+                    // 1. Tentar ler do alvo selecionado no controller
+                    var targetUnit = self.Obf_RuA<Obf_R.Obf_ff>("m_kSelectTarget");
+                    if (targetUnit != null)
+                    {
+                        var uuid = targetUnit.Obf_RuA<object>("m_kUUID") ?? targetUnit.Obf_RuA<object>("m_ullUserID");
+                        if (uuid is long l) targetId = l;
+                        else if (uuid is double d) targetId = (long)d;
+
+                        targetName = targetUnit.Obf_RuA<string>("m_kName") ?? targetUnit.Obf_RuA<string>("sPlayerName");
+                    }
+
+                    // 2. Se nome estiver vazio, ler do HUD UGUI
+                    var hud = GameObject.Find("UI_Sys_Main_TargetAvatarInfoWidget_PC(Clone)") 
+                           ?? GameObject.Find("UI_Sys_Main_TargetAvatarInfoWidget_PC");
+                    Vector3 clickPos = Input.mousePosition;
+
+                    if (hud != null)
+                    {
+                        if (string.IsNullOrEmpty(targetName))
+                        {
+                            foreach (var t in hud.GetComponentsInChildren<TMPro.TMP_Text>(true))
+                            {
+                                if (t != null && t.name.Contains("NameDisplay") && !string.IsNullOrEmpty(t.text))
+                                {
+                                    targetName = t.text.Trim();
+                                    break;
+                                }
+                            }
+                            if (string.IsNullOrEmpty(targetName))
+                            {
+                                foreach (var t in hud.GetComponentsInChildren<UnityEngine.UI.Text>(true))
+                                {
+                                    if (t != null && t.name.Contains("NameDisplay") && !string.IsNullOrEmpty(t.text))
+                                    {
+                                        targetName = t.text.Trim();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Localizar posição do avatar no HUD para ancorar o menu suspenso
+                        var allRects = hud.GetComponentsInChildren<RectTransform>(true);
+                        foreach (var r in allRects)
+                        {
+                            if (r != null && (r.name.Contains("Avatar") || r.name.Contains("Career")))
+                            {
+                                clickPos = RectTransformUtility.WorldToScreenPoint(null, r.position);
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(targetName))
+                    {
+                        TargetContextMenu.Show(targetName, targetId, clickPos, () =>
+                        {
+                            _originalCareerClick?.Obf_HuA(self);
+                        });
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] target avatar click error: " + ex.Message);
+            }
+
+            _originalCareerClick?.Obf_HuA(self);
+        }
+
+        private static void PatchTeamAvatar(LA_LuaManager manager, Obf_R.Obf_ff global)
+        {
+            try
+            {
+                _manager = manager;
+                _global = global;
+
+                if (_teamFiveListCtrl == null)
+                {
+                    _teamFiveListCtrl = global.Obf_RuA<Obf_R.Obf_ff>("UI_Sys_TeamFiveListWidgetCtrl")
+                                     ?? Module(manager, global, "ui_sys_teamfivelistwidgetctrl");
+                    if (_teamFiveListCtrl != null)
+                    {
+                        _teamFiveListCtrl.Obf_luA<string, SelfMethod>("_refreshAvatarWidget", TeamFiveRefreshAvatarWrapper);
+                        Debug.Log("[Ro3Emu.LuaPatches] UI_Sys_TeamFiveListWidgetCtrl._refreshAvatarWidget hooked");
+                    }
+                }
+
+                // Note: Do not hook _refreshSocial or SetSocialAvatarFrame on UI_Com_AvatarWidgetCtrl!
+                // It is used universally across player profile, frames, and avatar selection; hooking it
+                // causes InvalidCastExceptions in xLua and breaks profile avatar pictures.
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] PatchTeamAvatar error: " + ex);
+            }
+        }
+
+        private static void OnRefreshTeamFiveAvatarWidget(Obf_R.Obf_ff self)
+        {
+            try
+            {
+                if (self == null) return;
+                var avatarWidget = self.Obf_RuA<Obf_R.Obf_ff>("m_kAvatarWidget");
+                if (avatarWidget == null) return;
+
+                var guidObj = self.Obf_RuA<object>("m_iGuid");
+                long guid = ToLong(guidObj);
+                if (guid <= 0) return;
+
+                var avatarData = self.Obf_RuA<Obf_R.Obf_ff>("m_kAvatarData");
+                if (avatarData == null)
+                {
+                    var avatarDataClass = _global?.Obf_RuA<Obf_R.Obf_ff>("lc_avatardata")
+                                       ?? (_manager != null && _global != null ? Module(_manager, _global, "lc_avatardata") : null);
+                    var bindInfoClass = _global?.Obf_RuA<Obf_R.Obf_ff>("lc_avatarbindinfo")
+                                     ?? (_manager != null && _global != null ? Module(_manager, _global, "lc_avatarbindinfo") : null);
+                    if (avatarDataClass != null && bindInfoClass != null)
+                    {
+                        var dataRes = avatarDataClass.Obf_RuA<Obf_R.Obf_Ef>("New")?.Obf_HuA(avatarDataClass);
+                        var bindRes = bindInfoClass.Obf_RuA<Obf_R.Obf_Ef>("New")?.Obf_HuA(bindInfoClass);
+                        if (dataRes != null && dataRes.Length > 0 && dataRes[0] is Obf_R.Obf_ff ad)
+                        {
+                            avatarData = ad;
+                            self.Obf_luA<string, object>("m_kAvatarData", avatarData);
+                            avatarData.Obf_luA<string, object>("m_bShowProfession", true);
+                            if (bindRes != null && bindRes.Length > 0 && bindRes[0] is Obf_R.Obf_ff bi)
+                            {
+                                avatarData.Obf_luA<string, object>("m_kBindInfo", bi);
+                            }
+                        }
+                    }
+                }
+
+                if (avatarData != null)
+                {
+                    var bindInfo = avatarData.Obf_RuA<Obf_R.Obf_ff>("m_kBindInfo");
+                    if (bindInfo != null)
+                    {
+                        bindInfo.Obf_luA<string, object>("m_iGuid", guid);
+                        bindInfo.Obf_luA<string, object>("m_bSendProtoForInfo", true);
+                    }
+                    avatarData.Obf_luA<string, object>("m_bShowProfession", true);
+                    var setDataFunc = avatarWidget.Obf_RuA<Obf_R.Obf_Ef>("SetData");
+                    setDataFunc?.Obf_HuA(avatarWidget, avatarData);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] OnRefreshTeamFiveAvatarWidget error: " + ex);
+            }
+        }
+
+        private static void OnAvatarRefreshSocial(Obf_R.Obf_ff self)
+        {
+            try
+            {
+                if (self == null) return;
+                if (self.Obf_RuA<object>("m_iNpcId") != null) return;
+
+                var guidObj = self.Obf_RuA<object>("m_iUUid");
+                long uuid = ToLong(guidObj);
+                long selfGuid = GetSelfGuid();
+
+                if (uuid == selfGuid && selfGuid > 0)
+                {
+                    var assetMgr = _global?.Obf_RuA<Obf_R.Obf_ff>("LC_AssetManagerIns");
+                    var getAssetDataFunc = assetMgr?.Obf_RuA<Obf_R.Obf_Ef>("GetAssetData");
+                    var equipDataRes = getAssetDataFunc?.Obf_HuA(assetMgr, "SocialOutfitEquipData");
+                    if (equipDataRes != null && equipDataRes.Length > 0)
+                    {
+                        self.Obf_luA<string, object>("m_kSocialData", equipDataRes[0]);
+                    }
+                }
+                else if (uuid > 0)
+                {
+                    var personalIns = _global?.Obf_RuA<Obf_R.Obf_ff>("LC_System_PersonalIns");
+                    var getRoleDataFunc = personalIns?.Obf_RuA<Obf_R.Obf_Ef>("GetRoleInfoData");
+                    var cacheType = _global?.Obf_LuA<object>("enum_GlobalCacheExtentType.Base");
+                    var roleDataRes = getRoleDataFunc?.Obf_HuA(personalIns, uuid, cacheType);
+                    Obf_R.Obf_ff roleData = roleDataRes != null && roleDataRes.Length > 0 ? roleDataRes[0] as Obf_R.Obf_ff : null;
+
+                    if (roleData != null)
+                    {
+                        var socialData = roleData.Obf_RuA<object>("m_iSocialData");
+                        self.Obf_luA<string, object>("m_kSocialData", socialData);
+                    }
+                    else
+                    {
+                        self.Obf_luA<string, object>("m_kSocialData", null);
+                    }
+                }
+
+                var socialDataObj = self.Obf_RuA<Obf_R.Obf_ff>("m_kSocialData");
+                long headId = 0;
+                long frameId = 0;
+                if (socialDataObj != null)
+                {
+                    var headVal = socialDataObj.Obf_NuA(1) ?? socialDataObj.Obf_NuA(1L);
+                    var frameVal = socialDataObj.Obf_NuA(2) ?? socialDataObj.Obf_NuA(2L);
+                    headId = ToLong(headVal);
+                    frameId = ToLong(frameVal);
+                }
+
+                if (headId > 0)
+                {
+                    var setSocialAvatarFunc = self.Obf_RuA<Obf_R.Obf_Ef>("SetSocialAvatar");
+                    setSocialAvatarFunc?.Obf_HuA(self, headId);
+                }
+                else
+                {
+                    ApplyCareerAvatar(self, uuid);
+                }
+
+                var setSocialFrameFunc = self.Obf_RuA<Obf_R.Obf_Ef>("SetSocialAvatarFrame");
+                setSocialFrameFunc?.Obf_HuA(self, frameId);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] OnAvatarRefreshSocial error: " + ex);
+            }
+        }
+
+        private static void OnSetSocialAvatarFrame(Obf_R.Obf_ff self, object frameIdObj)
+        {
+            try
+            {
+                long frameId = ToLong(frameIdObj);
+                if (frameId <= 0)
+                {
+                    var clearFrameFunc = self.Obf_RuA<Obf_R.Obf_Ef>("clearAvatarFrame");
+                    clearFrameFunc?.Obf_HuA(self);
+
+                    var imgLine = self.Obf_LuA<Obf_R.Obf_ff>("View.m_kIMG_AvatarLine");
+                    imgLine?.Obf_RuA<Obf_R.Obf_Ef>("SetActive")?.Obf_HuA(imgLine, false);
+
+                    var spineLine = self.Obf_LuA<Obf_R.Obf_ff>("View.m_kRTRANSFORM_AvatarLine");
+                    spineLine?.Obf_RuA<Obf_R.Obf_Ef>("SetActive")?.Obf_HuA(spineLine, false);
+                    return;
+                }
+
+                _originalAvatarSetSocialFrame?.Obf_HuA(self, frameId);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] OnSetSocialAvatarFrame error: " + ex);
+                _originalAvatarSetSocialFrame?.Obf_HuA(self, frameIdObj);
+            }
+        }
+
+        private static void ApplyCareerAvatar(Obf_R.Obf_ff self, long uuid)
+        {
+            try
+            {
+                long career = 0;
+                long gender = 0;
+
+                if (uuid > 0)
+                {
+                    var teamHelper = _global?.Obf_RuA<Obf_R.Obf_ff>("LC_TeamHelper") 
+                                  ?? (_manager != null && _global != null ? Module(_manager, _global, "lc_teamhelper") : null);
+                    var getMemberFunc = teamHelper?.Obf_RuA<Obf_R.Obf_Ef>("GetMemberInfoByGUID");
+                    var memberRes = getMemberFunc?.Obf_HuA(uuid);
+                    if (memberRes != null && memberRes.Length > 0 && memberRes[0] is Obf_R.Obf_ff member)
+                    {
+                        career = ToLong(member.Obf_RuA<object>("m_iJob"));
+                        gender = ToLong(member.Obf_RuA<object>("m_iGender"));
+                    }
+
+                    if (career <= 0)
+                    {
+                        var personalIns = _global?.Obf_RuA<Obf_R.Obf_ff>("LC_System_PersonalIns");
+                        var getRoleDataFunc = personalIns?.Obf_RuA<Obf_R.Obf_Ef>("GetRoleInfoData");
+                        var cacheType = _global?.Obf_LuA<object>("enum_GlobalCacheExtentType.Base");
+                        var roleDataRes = getRoleDataFunc?.Obf_HuA(personalIns, uuid, cacheType);
+                        if (roleDataRes != null && roleDataRes.Length > 0 && roleDataRes[0] is Obf_R.Obf_ff roleData)
+                        {
+                            career = ToLong(roleData.Obf_RuA<object>("m_iCareer"));
+                            gender = ToLong(roleData.Obf_RuA<object>("m_iGender"));
+                        }
+                    }
+                }
+
+                if (career <= 0 && uuid == GetSelfGuid())
+                {
+                    var playerInfoHelper = _playerInfoHelper 
+                                        ?? (_manager != null && _global != null ? Module(_manager, _global, "lc_playerinfohelper") : null);
+                    if (playerInfoHelper != null)
+                    {
+                        var cRes = playerInfoHelper.Obf_RuA<Obf_R.Obf_Ef>("GetSelfCareer")?.Obf_HuA();
+                        var gRes = playerInfoHelper.Obf_RuA<Obf_R.Obf_Ef>("GetSelfGender")?.Obf_HuA();
+                        if (cRes != null && cRes.Length > 0) career = ToLong(cRes[0]);
+                        if (gRes != null && gRes.Length > 0) gender = ToLong(gRes[0]);
+                    }
+                }
+
+                if (career > 0)
+                {
+                    var setAvatarByCareer = self.Obf_RuA<Obf_R.Obf_Ef>("SetAvatarByCarrerId");
+                    setAvatarByCareer?.Obf_HuA(self, career, gender);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Ro3Emu.LuaPatches] ApplyCareerAvatar error: " + ex);
+            }
+        }
+
+        private static long GetSelfGuid()
+        {
+            try
+            {
+                var func = _global?.Obf_RuA<Obf_R.Obf_Ef>("GetSelfGuid");
+                var res = func?.Obf_HuA();
+                if (res != null && res.Length > 0)
+                {
+                    return ToLong(res[0]);
+                }
+            }
+            catch { }
+            return 0;
         }
 
         private static void UpdateCountdownState(Obf_R.Obf_ff self)
@@ -234,7 +726,7 @@ namespace Ro3Emu.ClientHooks
         private static void Note(string message) { if (Reported.Add(message)) Debug.Log("[Ro3Emu.LuaPatches] " + message); }
 
         /// <summary>package.loaded[name], or require(name) when not loaded yet.</summary>
-        private static Obf_R.Obf_ff Module(LA_LuaManager manager, Obf_R.Obf_ff global, string name)
+        internal static Obf_R.Obf_ff Module(LA_LuaManager manager, Obf_R.Obf_ff global, string name)
         {
             if (global.Obf_LuA<Obf_R.Obf_ff>("package.loaded." + name) is { } loaded) return loaded;
             var result = manager.Obf_MD(name);
