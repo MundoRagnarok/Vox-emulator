@@ -438,6 +438,11 @@ public sealed partial class CombatService
         {
             case "Fire_Wall" or "Quagmire" or "Fire_Pillar" or "Meteor_Storm" or "Lord_of_Vermilion" or "Storm_Gust" when logic.Length >= 3:
                 npc = (int)logic[0]; interval = (int)logic[1]; duration = (int)logic[2]; break;
+            case "ZhongLiYuanYe" or "GravitationField" or "GravitationalField":
+                npc = 1200013;
+                interval = logic.Length >= 1 && logic[0] > 0 ? (int)logic[0] : 500;
+                duration = logic.Length >= 2 && logic[1] > 0 ? (int)logic[1] : 3900;
+                break;
             case "Magnus_Exorcismus":
                 npc = logic.Length > 0 && logic[0] > 0 ? (int)logic[0] : 22000009;
                 interval = 500;
