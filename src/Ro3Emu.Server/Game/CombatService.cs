@@ -305,6 +305,9 @@ public sealed partial class CombatService : IGameTicker
         if (scriptShow == 14115) return 14115800;        // fx_common_heal.prefab (Santuário)
         if (scriptShow == 14007) return 14007800;        // fx_skill_heal.prefab (Cura)
 
+        // Explicit visual mappings for Merchant skills
+        if (scriptShow == 16007) return 1600703;         // fx_blacksmith_jinqiangongji.prefab (Mamonita)
+
         var effects = data.SkillTemplateTable("Lua_Config_EffectData");
         for (long id = scriptShow * 100; id < scriptShow * 100 + 100; id++)
             if (effects.TryGetValue(id.ToString(), out var e) && e.TryGetProperty("m_kDamage", out _)) return (int)id;
