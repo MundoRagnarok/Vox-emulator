@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Windows.Forms
+﻿Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 [System.Windows.Forms.Application]::EnableVisualStyles()
@@ -10,30 +10,43 @@ $settingsFile = Join-Path $scriptDir "server\appsettings.json"
 $devSettingsFile = Join-Path $scriptDir "server\appsettings.Development.json"
 
 if (-not (Test-Path $settingsFile)) {
-    # Tenta procurar na raiz caso executado de outro ponto
     if (Test-Path (Join-Path $scriptDir "appsettings.json")) {
         $settingsFile = Join-Path $scriptDir "appsettings.json"
     }
 }
 
-# Carregar JSON existente ou criar padrao
-$jsonObj = [ordered]@{}
+# Carregar JSON existente
+$jsonObj = $null
 if (Test-Path $settingsFile) {
     try {
         $raw = Get-Content $settingsFile -Raw -Encoding UTF8
         $jsonObj = $raw | ConvertFrom-Json
     } catch {
-        $jsonObj = [ordered]@{}
+        $jsonObj = $null
     }
 }
 
-# Garantir estrutura Ro3Emu
+if ($jsonObj -eq $null) {
+    $jsonObj = [PSCustomObject]@{
+        Ro3Emu = [PSCustomObject]@{
+            ClusterName = "Vox Emulador"
+            AreaName = "Prontera"
+            PublicHost = "127.0.0.1"
+            HttpPort = 5380
+            MicroGatePort = 20000
+            GameGatePort = 33100
+            GmOpenWhenEmpty = $true
+            GmAccounts = @()
+        }
+    }
+}
+
 if (-not $jsonObj.Ro3Emu) {
     $jsonObj | Add-Member -MemberType NoteProperty -Name "Ro3Emu" -Value ([PSCustomObject]@{})
 }
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Painel de Configurações - Vox Emulador 🇧🇷"
+$form.Text = "Painel de Configuracoes - Vox Emulador (Brasil)"
 $form.Size = New-Object System.Drawing.Size(560, 680)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
@@ -42,7 +55,7 @@ $form.BackColor = [System.Drawing.Color]::FromArgb(15, 23, 42)
 $form.ForeColor = [System.Drawing.Color]::White
 
 # Estilos e Fontes
-$fontTitle = New-Object System.Drawing.Font("Segoe UI", 14, [System.Drawing.FontStyle]::Bold)
+$fontTitle = New-Object System.Drawing.Font("Segoe UI", 13, [System.Drawing.FontStyle]::Bold)
 $fontSection = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
 $fontNormal = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Regular)
 $fontSmall = New-Object System.Drawing.Font("Segoe UI", 8, [System.Drawing.FontStyle]::Regular)
@@ -53,15 +66,15 @@ $textLight = [System.Drawing.Color]::FromArgb(241, 245, 249)
 
 # Titulo
 $lblHeader = New-Object System.Windows.Forms.Label
-$lblHeader.Text = "⚙️ VOX EMULADOR - CONFIGURAÇÕES"
+$lblHeader.Text = "VOX EMULADOR - CONFIGURACOES"
 $lblHeader.Font = $fontTitle
 $lblHeader.ForeColor = $gold
 $lblHeader.Location = New-Object System.Drawing.Point(20, 15)
-$lblHeader.Size = New-Object System.Drawing.Size(500, 30)
+$lblHeader.Size = New-Object System.Drawing.Size(500, 28)
 $form.Controls.Add($lblHeader)
 
 $lblSub = New-Object System.Windows.Forms.Label
-$lblSub.Text = "Emulador Brasileiro de Ragnarok Online 3 · Comunidade Mundo Ragnarok"
+$lblSub.Text = "Emulador Brasileiro de Ragnarok Online 3 - Comunidade Mundo Ragnarok"
 $lblSub.Font = $fontSmall
 $lblSub.ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
 $lblSub.Location = New-Object System.Drawing.Point(22, 45)
@@ -76,7 +89,7 @@ $tabControl.Font = $fontNormal
 
 # ----------------- ABA 1: SERVIDOR -----------------
 $tabGeral = New-Object System.Windows.Forms.TabPage
-$tabGeral.Text = "Servidor & Nome"
+$tabGeral.Text = "Servidor e Nome"
 $tabGeral.BackColor = $bgDark
 
 # Nome do Servidor
@@ -90,12 +103,12 @@ $tabGeral.Controls.Add($lblCluster)
 $txtCluster = New-Object System.Windows.Forms.TextBox
 $txtCluster.Location = New-Object System.Drawing.Point(20, 42)
 $txtCluster.Size = New-Object System.Drawing.Size(450, 25)
-$txtCluster.Text = if ($jsonObj.Ro3Emu.ClusterName) { $jsonObj.Ro3Emu.ClusterName } else { "Vox Emulador" }
+$txtCluster.Text = if ($jsonObj.Ro3Emu.ClusterName) { [string]$jsonObj.Ro3Emu.ClusterName } else { "Vox Emulador" }
 $tabGeral.Controls.Add($txtCluster)
 
 # Nome da Area / Regiao
 $lblArea = New-Object System.Windows.Forms.Label
-$lblArea.Text = "Nome da Região / Canal (ex: Prontera, Brasil):"
+$lblArea.Text = "Nome da Regiao / Canal (ex: Prontera, Brasil):"
 $lblArea.Location = New-Object System.Drawing.Point(20, 80)
 $lblArea.Size = New-Object System.Drawing.Size(400, 20)
 $lblArea.ForeColor = $textLight
@@ -104,12 +117,12 @@ $tabGeral.Controls.Add($lblArea)
 $txtArea = New-Object System.Windows.Forms.TextBox
 $txtArea.Location = New-Object System.Drawing.Point(20, 102)
 $txtArea.Size = New-Object System.Drawing.Size(450, 25)
-$txtArea.Text = if ($jsonObj.Ro3Emu.AreaName) { $jsonObj.Ro3Emu.AreaName } else { "Prontera" }
+$txtArea.Text = if ($jsonObj.Ro3Emu.AreaName) { [string]$jsonObj.Ro3Emu.AreaName } else { "Prontera" }
 $tabGeral.Controls.Add($txtArea)
 
 # IP do Servidor
 $lblHost = New-Object System.Windows.Forms.Label
-$lblHost.Text = "Endereço IP do Servidor (127.0.0.1 para jogar sozinho):"
+$lblHost.Text = "Endereco IP do Servidor (127.0.0.1 para solo):"
 $lblHost.Location = New-Object System.Drawing.Point(20, 140)
 $lblHost.Size = New-Object System.Drawing.Size(400, 20)
 $lblHost.ForeColor = $textLight
@@ -118,12 +131,12 @@ $tabGeral.Controls.Add($lblHost)
 $txtHost = New-Object System.Windows.Forms.TextBox
 $txtHost.Location = New-Object System.Drawing.Point(20, 162)
 $txtHost.Size = New-Object System.Drawing.Size(450, 25)
-$txtHost.Text = if ($jsonObj.Ro3Emu.PublicHost) { $jsonObj.Ro3Emu.PublicHost } else { "127.0.0.1" }
+$txtHost.Text = if ($jsonObj.Ro3Emu.PublicHost) { [string]$jsonObj.Ro3Emu.PublicHost } else { "127.0.0.1" }
 $tabGeral.Controls.Add($txtHost)
 
 # Porta HTTP
 $lblHttpPort = New-Object System.Windows.Forms.Label
-$lblHttpPort.Text = "Porta HTTP / Login (Padrão: 5380):"
+$lblHttpPort.Text = "Porta HTTP / Login (Padrao: 5380):"
 $lblHttpPort.Location = New-Object System.Drawing.Point(20, 200)
 $lblHttpPort.Size = New-Object System.Drawing.Size(200, 20)
 $lblHttpPort.ForeColor = $textLight
@@ -132,12 +145,12 @@ $tabGeral.Controls.Add($lblHttpPort)
 $txtHttpPort = New-Object System.Windows.Forms.TextBox
 $txtHttpPort.Location = New-Object System.Drawing.Point(20, 222)
 $txtHttpPort.Size = New-Object System.Drawing.Size(200, 25)
-$txtHttpPort.Text = if ($jsonObj.Ro3Emu.HttpPort) { $jsonObj.Ro3Emu.HttpPort } else { "5380" }
+$txtHttpPort.Text = if ($jsonObj.Ro3Emu.HttpPort) { [string]$jsonObj.Ro3Emu.HttpPort } else { "5380" }
 $tabGeral.Controls.Add($txtHttpPort)
 
 # Porta Game Gate
 $lblGamePort = New-Object System.Windows.Forms.Label
-$lblGamePort.Text = "Porta Game Gate (Padrão: 33100):"
+$lblGamePort.Text = "Porta Game Gate (Padrao: 33100):"
 $lblGamePort.Location = New-Object System.Drawing.Point(250, 200)
 $lblGamePort.Size = New-Object System.Drawing.Size(200, 20)
 $lblGamePort.ForeColor = $textLight
@@ -146,12 +159,12 @@ $tabGeral.Controls.Add($lblGamePort)
 $txtGamePort = New-Object System.Windows.Forms.TextBox
 $txtGamePort.Location = New-Object System.Drawing.Point(250, 222)
 $txtGamePort.Size = New-Object System.Drawing.Size(220, 25)
-$txtGamePort.Text = if ($jsonObj.Ro3Emu.GameGatePort) { $jsonObj.Ro3Emu.GameGatePort } else { "33100" }
+$txtGamePort.Text = if ($jsonObj.Ro3Emu.GameGatePort) { [string]$jsonObj.Ro3Emu.GameGatePort } else { "33100" }
 $tabGeral.Controls.Add($txtGamePort)
 
 # Opcoes de Conteudo Aberto
 $chkOpenContent = New-Object System.Windows.Forms.CheckBox
-$chkOpenContent.Text = "Liberar todo o conteúdo do jogo sem travas de temporada (Open Content)"
+$chkOpenContent.Text = "Liberar todo o conteudo do jogo sem travas de temporada (Open Content)"
 $chkOpenContent.Location = New-Object System.Drawing.Point(20, 270)
 $chkOpenContent.Size = New-Object System.Drawing.Size(450, 30)
 $chkOpenContent.ForeColor = $textLight
@@ -170,7 +183,7 @@ $tabControl.TabPages.Add($tabGeral)
 
 # ----------------- ABA 2: GERENCIAMENTO DE GM -----------------
 $tabGm = New-Object System.Windows.Forms.TabPage
-$tabGm.Text = "Contas & Game Master"
+$tabGm.Text = "Contas e Game Master"
 $tabGm.BackColor = $bgDark
 
 # Checkbox Toda Conta ser GM
@@ -187,15 +200,15 @@ $chkGmOpen.Checked = $isGmOpen
 $tabGm.Controls.Add($chkGmOpen)
 
 $lblGmExpl = New-Object System.Windows.Forms.Label
-$lblGmExpl.Text = "💡 Desmarque a opção acima caso queira um servidor comum onde apenas as contas listadas abaixo tenham acesso a comandos (!item, !zeny, !lvl, etc.)."
+$lblGmExpl.Text = "Dica: Desmarque a opcao acima caso queira um servidor normal onde apenas as contas listadas abaixo tenham acesso aos comandos de GM (!item, !zeny, !lvl, etc.)."
 $lblGmExpl.Location = New-Object System.Drawing.Point(20, 55)
-$lblGmExpl.Size = New-Object System.Drawing.Size(450, 40)
+$lblGmExpl.Size = New-Object System.Drawing.Size(450, 45)
 $lblGmExpl.ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
 $tabGm.Controls.Add($lblGmExpl)
 
 # Lista de Contas GM
 $lblGmList = New-Object System.Windows.Forms.Label
-$lblGmList.Text = "Contas com Permissão de GM (uma por linha):"
+$lblGmList.Text = "Contas com Permissao de GM (uma conta por linha):"
 $lblGmList.Location = New-Object System.Drawing.Point(20, 110)
 $lblGmList.Size = New-Object System.Drawing.Size(400, 20)
 $lblGmList.ForeColor = $textLight
@@ -224,11 +237,11 @@ $tabControl.TabPages.Add($tabGm)
 
 # ----------------- ABA 3: RATES & MULTIPLICADORES -----------------
 $tabRates = New-Object System.Windows.Forms.TabPage
-$tabRates.Text = "Rates & Drops"
+$tabRates.Text = "Rates e Drops"
 $tabRates.BackColor = $bgDark
 
 $lblRatesIntro = New-Object System.Windows.Forms.Label
-$lblRatesIntro.Text = "Ajuste os multiplicadores de progressão do Vox Emulador:"
+$lblRatesIntro.Text = "Ajuste os multiplicadores de progressao do Vox Emulador:"
 $lblRatesIntro.Location = New-Object System.Drawing.Point(20, 20)
 $lblRatesIntro.Size = New-Object System.Drawing.Size(450, 25)
 $lblRatesIntro.ForeColor = $gold
@@ -236,7 +249,7 @@ $tabRates.Controls.Add($lblRatesIntro)
 
 # Rate Exp Base
 $lblRateBase = New-Object System.Windows.Forms.Label
-$lblRateBase.Text = "Multiplicador de Experiência Base (EXP):"
+$lblRateBase.Text = "Multiplicador de Experiencia Base (EXP):"
 $lblRateBase.Location = New-Object System.Drawing.Point(20, 60)
 $lblRateBase.Size = New-Object System.Drawing.Size(300, 20)
 $lblRateBase.ForeColor = $textLight
@@ -251,7 +264,7 @@ $tabRates.Controls.Add($cmbRateBase)
 
 # Rate Exp Job
 $lblRateJob = New-Object System.Windows.Forms.Label
-$lblRateJob.Text = "Multiplicador de Experiência de Classe (Job):"
+$lblRateJob.Text = "Multiplicador de Experiencia de Classe (Job):"
 $lblRateJob.Location = New-Object System.Drawing.Point(20, 130)
 $lblRateJob.Size = New-Object System.Drawing.Size(300, 20)
 $lblRateJob.ForeColor = $textLight
@@ -279,9 +292,8 @@ $cmbRateDrop.Location = New-Object System.Drawing.Point(20, 225)
 $cmbRateDrop.Size = New-Object System.Drawing.Size(200, 25)
 $tabRates.Controls.Add($cmbRateDrop)
 
-# Info sobre rates
 $lblRatesNote = New-Object System.Windows.Forms.Label
-$lblRatesNote.Text = "ℹ️ As taxas são aplicadas diretamente no motor de resolução de recompensas do servidor. Para servidores oficiais 1:1, mantenha tudo em 1x."
+$lblRatesNote.Text = "Nota: Para servidores oficiais 1:1, mantenha os multiplicadores em 1x."
 $lblRatesNote.Location = New-Object System.Drawing.Point(20, 280)
 $lblRatesNote.Size = New-Object System.Drawing.Size(450, 45)
 $lblRatesNote.ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
@@ -292,9 +304,8 @@ $tabControl.TabPages.Add($tabRates)
 $form.Controls.Add($tabControl)
 
 # ----------------- BOTOES DE ACAO -----------------
-# Botao Salvar
 $btnSalvar = New-Object System.Windows.Forms.Button
-$btnSalvar.Text = "💾 SALVAR CONFIGURAÇÕES"
+$btnSalvar.Text = "SALVAR CONFIGURACOES"
 $btnSalvar.Location = New-Object System.Drawing.Point(20, 570)
 $btnSalvar.Size = New-Object System.Drawing.Size(245, 45)
 $btnSalvar.BackColor = [System.Drawing.Color]::FromArgb(22, 163, 74)
@@ -303,9 +314,8 @@ $btnSalvar.Font = $fontSection
 $btnSalvar.FlatStyle = "Flat"
 $form.Controls.Add($btnSalvar)
 
-# Botao Iniciar
 $btnIniciar = New-Object System.Windows.Forms.Button
-$btnIniciar.Text = "▶️ INICIAR O JOGO"
+$btnIniciar.Text = "INICIAR O JOGO"
 $btnIniciar.Location = New-Object System.Drawing.Point(280, 570)
 $btnIniciar.Size = New-Object System.Drawing.Size(245, 45)
 $btnIniciar.BackColor = [System.Drawing.Color]::FromArgb(37, 99, 235)
@@ -322,7 +332,7 @@ $btnSalvar.Add_Click({
         $jsonObj.Ro3Emu.PublicHost = $txtHost.Text.Trim()
         $jsonObj.Ro3Emu.HttpPort = [int]$txtHttpPort.Text.Trim()
         $jsonObj.Ro3Emu.GameGatePort = [int]$txtGamePort.Text.Trim()
-        $jsonObj.Ro3Emu.GmOpenWhenEmpty = $chkGmOpen.Checked
+        $jsonObj.Ro3Emu.GmOpenWhenEmpty = [bool]$chkGmOpen.Checked
 
         # Processar Lista de GMs
         $rawLines = $txtGmAccounts.Lines | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
@@ -344,14 +354,14 @@ $btnSalvar.Add_Click({
         }
 
         [System.Windows.Forms.MessageBox]::Show(
-            "Configurações do Vox Emulador salvas com sucesso!",
+            "Configuracoes do Vox Emulador salvas com sucesso!",
             "Sucesso",
             [System.Windows.Forms.MessageBoxButtons]::OK,
             [System.Windows.Forms.MessageBoxIcon]::Information
         )
     } catch {
         [System.Windows.Forms.MessageBox]::Show(
-            "Erro ao salvar configurações: $($_.Exception.Message)",
+            "Erro ao salvar configuracoes: $($_.Exception.Message)",
             "Erro",
             [System.Windows.Forms.MessageBoxButtons]::OK,
             [System.Windows.Forms.MessageBoxIcon]::Error
@@ -371,7 +381,7 @@ $btnIniciar.Add_Click({
         $form.Close()
     } else {
         [System.Windows.Forms.MessageBox]::Show(
-            "Executável VoxEmulador.exe não encontrado nesta pasta!",
+            "Executavel VoxEmulador.exe nao encontrado nesta pasta!",
             "Aviso",
             [System.Windows.Forms.MessageBoxButtons]::OK,
             [System.Windows.Forms.MessageBoxIcon]::Warning
