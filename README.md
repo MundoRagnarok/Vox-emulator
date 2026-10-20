@@ -71,7 +71,7 @@ Siga este tutorial passo a passo para configurar o emulador e abrir o Ragnarok O
 ### Método 1: Executando pela Release Pré-Compilada (Recomendado para Jogadores)
 
 1. **Baixe o Emulador:**
-   - Faça o download do arquivo `RO3Emu-win-x64.zip` na seção de [Releases](https://github.com/aethai/ro3emu-server/releases/latest).
+   - Faça o download do arquivo `RO3Emu-win-x64.zip` na seção de [Releases](https://github.com/MundoRagnarok/Vox-emulator/releases).
    - Extraia o conteúdo em uma pasta de sua escolha (ex: `C:\VoxEmulador\`).
 
 2. **Execute o `RO3Emu.exe`:**

@@ -44,7 +44,7 @@ O **Vox Emulador** é composto por:
 Se você só quer jogar localmente sem precisar compilar o código em C#:
 
 ### Passo 1: Baixar os arquivos do emulador
-1. Acesse a página de lançamentos do projeto ou baixe o pacote **`RO3Emu-win-x64.zip`**.
+1. Acesse a página de [Releases](https://github.com/MundoRagnarok/Vox-emulator/releases) do projeto e baixe o pacote **`RO3Emu-win-x64.zip`**.
 2. Extraia o conteúdo do arquivo `.zip` em uma pasta de sua preferência (ex: `C:\VoxEmulador` ou `D:\Jogos\VoxEmulador`).
    > *Dica:* Evite caminhos com caracteres especiais ou pastas protegidas pelo sistema como `C:\Program Files`.
 
