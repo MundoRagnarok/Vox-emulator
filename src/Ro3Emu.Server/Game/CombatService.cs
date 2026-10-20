@@ -295,9 +295,16 @@ public sealed partial class CombatService : IGameTicker
         log.LogDebug("{Name} locks {Target}", s.Role?.Name, req.EnemyId);
     }
 
-    /// <summary>The template's damage EffectData (hit fx + flinch): the first with m_kDamage in [show*100, show*100+99].</summary>
+    /// <summary>The template's damage EffectData (hit fx + flinch): prefers action damage with visual gfx/shake/audio, then any action damage, falling back to any m_kDamage in [show*100, show*100+99] or sub-variants.</summary>
     private int HitEffect(long scriptShow)
     {
+        // Explicit visual mappings for Priest / Archbishop skills with dedicated impact/heal prefabs
+        if (scriptShow is 4301 or 14301) return 1415002; // fx_skill_highheal.prefab (Cura Maior)
+        if (scriptShow is 4304 or 14304) return 1415302; // fx_skill_cantocandidus.prefab (Lírio Santo)
+        if (scriptShow == 14109) return 1410902;         // fx_skill_magnuexorcismus.prefab (Cruz Exorcista)
+        if (scriptShow == 14115) return 14115800;        // fx_common_heal.prefab (Santuário)
+        if (scriptShow == 14007) return 14007800;        // fx_skill_heal.prefab (Cura)
+
         var effects = data.SkillTemplateTable("Lua_Config_EffectData");
         for (long id = scriptShow * 100; id < scriptShow * 100 + 100; id++)
             if (effects.TryGetValue(id.ToString(), out var e) && e.TryGetProperty("m_kDamage", out _)) return (int)id;

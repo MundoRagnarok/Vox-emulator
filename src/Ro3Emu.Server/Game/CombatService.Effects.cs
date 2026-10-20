@@ -227,6 +227,10 @@ public sealed partial class CombatService
                 foreach (var handler in Healed) handler(s, actual);
                 foreach (var handler in HealedAsync) await handler(s, actual);
             }
+            if (!damage && (friendly || hit.Dsts.Count == 0))
+            {
+                hit.Dsts.Add(new DamageInfo { DstID = recipient.Role!.Id, Damage = 0, DamageType = DamageType.Damage, HitResult = DamageHitResult.Normal, DstElement = 1 });
+            }
             if (script is "Detoxify" or "HealingSkills")
             {
                 // (inferred) cleanse exact described groups rather than removing every beneficial/hostile status.
@@ -247,8 +251,9 @@ public sealed partial class CombatService
                 });
             }
             if (CurrentCaster() && hit.Dsts.Any(d => d.HitResult != DamageHitResult.Miss)) await buffs.RecoverEnergyOnHitAsync(s, row);
+            var fieldViewers = field != null ? field.Viewers : Enumerable.Empty<GameSession>();
             var sourceViewers = CurrentCaster() ? world.Viewers(s).Append(s) : Enumerable.Empty<GameSession>();
-            foreach (var viewer in processed.SelectMany(t => t.Viewers).Concat(sourceViewers).Distinct()) await viewer.SendGameAsync(SkillHit, hit);
+            foreach (var viewer in processed.SelectMany(t => t.Viewers).Concat(fieldViewers).Concat(sourceViewers).Concat(allies).Distinct()) await viewer.SendGameAsync(SkillHit, hit);
             if (CurrentCaster() && field?.Trap == true)
                 await ToPlayerAndViewersAsync(s, TrapDamage, new TrapDamageNtf { SkillConfigId = action.Request.SkillId, DamageValue = hit.Dsts.Sum(d => d.Damage), Pos = center.Clone() });
         }
@@ -433,6 +438,18 @@ public sealed partial class CombatService
         {
             case "Fire_Wall" or "Quagmire" or "Fire_Pillar" or "Meteor_Storm" or "Lord_of_Vermilion" or "Storm_Gust" when logic.Length >= 3:
                 npc = (int)logic[0]; interval = (int)logic[1]; duration = (int)logic[2]; break;
+            case "Magnus_Exorcismus":
+                npc = logic.Length > 0 && logic[0] > 0 ? (int)logic[0] : 22000009;
+                interval = 500;
+                duration = logic.Length > 1 && logic[1] > 0 ? (int)(logic[1] * 1000) : 4000;
+                radius = 8f;
+                break;
+            case "Sanctuary":
+                npc = 22000003;
+                interval = 600;
+                duration = 15000;
+                radius = 7f;
+                break;
             case "Safety_Wall" or "Pneuma" when logic.Length >= 8:
                 npc = (int)logic[5]; duration = (int)logic[2]; radius = (float)(logic[7] / 100);
                 protection = script == "Safety_Wall" ? 1 : 2; charges = script == "Safety_Wall" ? (int)logic[1] : int.MaxValue; break;
