@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://discord.gg/UvvJF4W3yK"><img src="https://img.shields.io/badge/Discord-Vox%20Emulador-5865F2?logo=discord&logoColor=white&style=for-the-badge" alt="Discord da Comunidade"></a>
+ <a href="https://discord.gg/UvvJF4W3yK"><img src="https://img.shields.io/badge/Discord-Mundo%20Ragnarok-5865F2?logo=discord&logoColor=white&style=for-the-badge" alt="Discord Mundo Ragnarok"></a>
   <img src="https://img.shields.io/badge/C%23-.NET%2010-512BD4?logo=dotnet&logoColor=white&style=for-the-badge" alt=".NET 10">
   <img src="https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-blue?style=for-the-badge" alt="GPL-3.0">
   <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-orange?style=for-the-badge" alt="Status">
